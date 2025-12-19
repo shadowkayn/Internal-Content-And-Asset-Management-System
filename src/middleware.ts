@@ -15,13 +15,13 @@ export function middleware(request: NextRequest) {
 
   // 未登录
   if (!token) {
-    // ✅ 必须return重定向响应
+    // 必须return重定向响应
     return backLogin();
   }
 
   const payload = verifyToken(token) as JWTPayload;
   if (!payload) {
-    // ✅ 必须return重定向响应
+    // 必须return重定向响应
     return backLogin();
   }
 
