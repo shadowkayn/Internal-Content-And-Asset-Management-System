@@ -1,48 +1,48 @@
-import mongoose, { models } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  phone: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  avatar: {
-    type: String,
-    default: "",
-  },
-  age: {
-    type: Number,
-    default: 18,
-  },
-  createAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updateAt: {
-    type: Date,
-    default: Date.now,
-  },
-  // 软删除
-  isDeleted: {
-    type: Boolean,
-  },
-});
+export interface IUser extends Document {
+  username: string;
+  password: string;
+  role: "admin" | "editor" | "viewer";
+  status: "active" | "disabled";
+  email: string;
+  avatar: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-// models.User || ... 是为了解决 Next.js 热更新重复注册模型的问题
-const UserModel = models.User || mongoose.model("User", UserSchema);
+const UserSchema: Schema<IUser> = new Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: ["admin", "editor", "viewer"],
+      default: "viewer",
+    },
+    status: {
+      type: String,
+      enum: ["active", "disabled"],
+      default: "active",
+    },
+  },
+  {
+    // Mongoose 会自动给这个集合添加 createdAt、updatedA 两个字段
+    timestamps: true,
+  },
+);
 
-export default UserModel;
+// 防止模型重复连接，Next.js 热更新必备
+const User: Model<IUser> =
+  mongoose.models.User || mongoose.model("User", UserSchema);
+
+export default User;
