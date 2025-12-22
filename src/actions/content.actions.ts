@@ -3,6 +3,7 @@
 import { connectDB } from "@/lib/db";
 import Content from "@/models/content.model";
 import { getCurrentUser } from "@/lib/auth";
+import { hasPermission, Permissions } from "@/constants/permissions";
 
 export async function createContent(_: any, formData: FormData) {
   await connectDB();
@@ -14,7 +15,7 @@ export async function createContent(_: any, formData: FormData) {
   }
 
   // 权限不是写在页面里，而是在业务层
-  if (user.role !== "viewer") {
+  if (!(await hasPermission(Permissions.CONTENT_CREATE))) {
     return { error: "无权限" };
   }
 
@@ -44,7 +45,7 @@ export async function listContents(page: number = 1, pageSize: number = 10) {
 
   // editor 只能看到自己的编辑的内容
   // 数据层控制权限
-  if (user.role === "editor") {
+  if (await hasPermission(Permissions.CONTENT_UPDATE)) {
     filter.author = user._id;
   }
 
@@ -67,6 +68,7 @@ export async function listContents(page: number = 1, pageSize: number = 10) {
   return { list, total };
 }
 
+// 更新状态
 export async function updateContentStatus(contentId: string, status: string) {
   await connectDB();
 
@@ -76,7 +78,7 @@ export async function updateContentStatus(contentId: string, status: string) {
     return { error: "未登录" };
   }
 
-  if (user.role === "viewer") {
+  if (!(await hasPermission(Permissions.CONTENT_PUBLISH))) {
     return { error: "无权限" };
   }
 
@@ -136,7 +138,7 @@ export async function updateContent(contentId: string, formData: FormData) {
     return { error: "未登录" };
   }
 
-  if (user.role === "viewer") {
+  if (!(await hasPermission(Permissions.CONTENT_UPDATE))) {
     return { error: "没有编辑权限" };
   }
 
