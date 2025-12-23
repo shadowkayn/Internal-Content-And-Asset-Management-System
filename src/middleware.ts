@@ -1,13 +1,17 @@
+// 在 Next.js 中，当从一个文件 import 任何东西时，Next.js 会尝试编译该文件的所有内容。
+// 中间件 (Middleware) 运行在 Edge Runtime（极简环境）。
+// Mongoose/User 模型 依赖 Node.js 的原生 net、tls 和 crypto 模块。
+// 即使你在中间件里只用了 verifyToken，但因为同一个文件里有 User 模型，Edge 环境会尝试加载它，结果发现不支持，直接崩溃报错。
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { JWTPayload, verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/token";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value as string;
   const pathName = request.nextUrl.pathname;
 
-  // 公开路由
-  if (pathName.startsWith("/login") || pathName.startsWith("/register")) {
+  // 公开路由放行
+  if (pathName.startsWith("/login")) {
     return NextResponse.next();
   }
 
@@ -19,7 +23,7 @@ export function middleware(request: NextRequest) {
     return backLogin();
   }
 
-  const payload = verifyToken(token) as JWTPayload;
+  const payload: any = await verifyToken(token);
   if (!payload) {
     // 必须return重定向响应
     return backLogin();
