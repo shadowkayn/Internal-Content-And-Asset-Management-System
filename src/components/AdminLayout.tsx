@@ -8,6 +8,7 @@ import {
   Breadcrumb,
   Dropdown,
   MenuProps,
+  message,
 } from "antd";
 import {
   UserOutlined,
@@ -17,11 +18,16 @@ import {
 } from "@ant-design/icons";
 import { SidebarMenu } from "@/components/SidebarMenu";
 import React, { useState } from "react";
+import { logout } from "@/actions/auth.actions";
+import { usePathname, useRouter } from "next/dist/client/components/navigation";
+import { MenuConfig } from "@/constants/menu";
 
 const { Header, Content, Footer, Sider } = Layout;
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   // 用户下拉菜单
   const userMenuItems: MenuProps["items"] = [
@@ -33,6 +39,58 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       danger: true,
     },
   ];
+
+  const onClick: MenuProps["onClick"] = ({ key }) => {
+    if (key === "logout") {
+      logout().then(() => {
+        router.replace("/auth/login");
+        message.success("退出登录成功");
+      });
+    }
+  };
+
+  // 面包屑
+  const getBreadcrumbItems = () => {
+    const items = [{ title: "首页" }]; // 默认根节点
+
+    const findPathItems = (
+      menuData: any[],
+      targetKey: string,
+      parents: any[] = [],
+    ): any[] | null => {
+      for (const item of menuData) {
+        if (item.key === targetKey) {
+          return [...parents, item];
+        }
+        if (item.children) {
+          const result = findPathItems(item.children, targetKey, [
+            ...parents,
+            item,
+          ]);
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+
+    const matchedItems = findPathItems(MenuConfig, pathname);
+
+    if (matchedItems) {
+      matchedItems.forEach((item) => {
+        items.push({ title: item.label });
+      });
+    } else if (pathname !== "/") {
+      // 兼容一些不在菜单里的页面，比如 /dashboard
+      const labelMap: Record<string, string> = { "/dashboard": "仪表盘" };
+      if (labelMap[pathname]) {
+        items.push({ title: labelMap[pathname] });
+      }
+    }
+
+    return items;
+  };
+
+  const breadcrumbItems = getBreadcrumbItems();
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -77,13 +135,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             zIndex: 9,
           }}
         >
-          <Breadcrumb items={[{ title: "后台管理" }, { title: "仪表盘" }]} />
+          <Breadcrumb items={breadcrumbItems} />
 
           <Space size={20}>
             <Badge count={5} dot>
               <BellOutlined style={{ fontSize: 18, cursor: "pointer" }} />
             </Badge>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <Dropdown
+              menu={{ items: userMenuItems, onClick }}
+              placement="bottomRight"
+            >
               <Space style={{ cursor: "pointer" }}>
                 <Avatar
                   icon={<UserOutlined />}

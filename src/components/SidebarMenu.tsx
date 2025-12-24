@@ -9,12 +9,24 @@ export function SidebarMenu() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useCurrentUser();
-  console.log("user", user);
+
+  // 获取所有有子项的菜单的 key
+  const getAllParentKeys = (menuItems: any[]): string[] => {
+    return menuItems.reduce((acc: string[], item: any) => {
+      if (item.children) {
+        acc.push(item.key);
+        acc.push(...getAllParentKeys(item.children));
+      }
+      return acc;
+    }, []);
+  };
 
   const filteredMenu = MenuConfig.filter((item) => {
     if (!item.permission) return true;
     return user?.permissions.includes(item.permission);
   });
+
+  const openKeys = getAllParentKeys(filteredMenu);
 
   const buildMenuItems = (menuItems: any[]): any => {
     return menuItems
@@ -47,6 +59,7 @@ export function SidebarMenu() {
     <Menu
       theme={"light"}
       mode="inline"
+      openKeys={openKeys} // 使用受控模式
       selectedKeys={[pathname]}
       items={buildMenuItems(filteredMenu)}
       onClick={(item) => {

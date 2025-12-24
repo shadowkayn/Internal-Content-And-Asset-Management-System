@@ -25,8 +25,8 @@ export const MenuConfig = [
         permission: Permissions.CONTENT_MANAGE,
       },
       {
-        key: "/admin/contents/create",
-        label: "创建内容",
+        key: "/admin/contents/preview",
+        label: "内容预览",
         permission: Permissions.CONTENT_MANAGE,
       },
     ],
