@@ -65,6 +65,11 @@ export const MenuConfig = [
         label: "系统日志",
         permission: Permissions.SYSTEM_MANAGE,
       },
+      {
+        key: "/admin/system/dictionary",
+        label: "字典管理",
+        permission: Permissions.SYSTEM_MANAGE,
+      },
     ],
   },
 ];
