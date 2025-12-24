@@ -11,11 +11,12 @@ export async function middleware(request: NextRequest) {
   const pathName = request.nextUrl.pathname;
 
   // 公开路由放行
-  if (pathName.startsWith("/login")) {
+  if (pathName.startsWith("/auth/login")) {
     return NextResponse.next();
   }
 
-  const backLogin = () => NextResponse.redirect(new URL("/login", request.url));
+  const backLogin = () =>
+    NextResponse.redirect(new URL("/auth/login", request.url));
 
   // 未登录
   if (!token) {
@@ -30,8 +31,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 角色权限控制（基础版）
-  if (pathName.startsWith("/system") && payload?.role !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (pathName.startsWith("/admin/system") && payload?.role !== "admin") {
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
   }
 
   return NextResponse.next();
@@ -40,5 +41,9 @@ export async function middleware(request: NextRequest) {
 // 配置 matcher
 export const config = {
   // 匹配 /dashboard 、/system 、 /content 下的所有子路径
-  matcher: ["/dashboard/:path*", "/system/:path*", "/content/:path*"],
+  matcher: [
+    "/admin/dashboard/:path*",
+    "/admin/system/:path*",
+    "/admin/content/:path*",
+  ],
 };

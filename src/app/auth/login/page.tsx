@@ -88,7 +88,7 @@ export default function AuthPage() {
         if (res.success) {
           message.success("登录成功");
           loginForm.resetFields();
-          window.location.href = "/dashboard";
+          window.location.href = "/admin/dashboard";
         } else {
           message.error(res.error);
         }
@@ -102,7 +102,6 @@ export default function AuthPage() {
   }
 
   function registerFn(values: any) {
-    console.log("registerFnvalues", values);
     const formData = new FormData();
     Object.keys(values).forEach((key) => {
       formData.append(key, values[key]);

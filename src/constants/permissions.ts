@@ -6,6 +6,7 @@ export const Permissions = {
   CONTENT_PUBLISH: "content:publish",
   CONTENT_MANAGE: "content:manage",
   USER_MANAGE: "user:manage",
+  SYSTEM_MANAGE: "system:manage",
 } as const;
 
 export async function hasPermission(permission: string) {
