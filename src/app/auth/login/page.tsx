@@ -51,7 +51,6 @@ export default function AuthPage() {
     try {
       // 校验邮箱格式
       const email = await registerForm.validateFields(["email"]);
-      console.log("email", email);
 
       setLoading(true);
       const result = await sendEmailVerificationCode(email.email);
@@ -78,8 +77,6 @@ export default function AuthPage() {
 
     // 添加记住我选项到表单数据
     formData.append("remember", remember ? "true" : "false");
-    const entries = Object.fromEntries(formData.entries());
-    console.log("formData entries", entries);
 
     setBtnLoading(true);
 

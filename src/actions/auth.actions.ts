@@ -46,7 +46,6 @@ export async function login(formData: FormData) {
   const password = formData.get("password") as string;
   const inputCaptcha = formData.get("captcha")?.toString().toLowerCase();
   const remember = formData.get("remember") === "true";
-  console.log("identifier", identifier);
 
   // 从 Redis 获取答案
   const cookieStore = await cookies();

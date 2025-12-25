@@ -21,6 +21,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 
 // 字典类型定义
@@ -129,7 +130,7 @@ export default function DictManagementPage() {
       title: "操作",
       key: "action",
       align: "center",
-      width: 280,
+      width: 360,
       render: (_: any, record: DictType) => (
         <Space size="middle">
           <Button
@@ -138,6 +139,13 @@ export default function DictManagementPage() {
             onClick={() => showModal(record)}
           >
             编辑
+          </Button>
+          <Button
+            type="link"
+            icon={<UnorderedListOutlined />}
+            style={{ color: "#52c41a" }}
+          >
+            字典数据
           </Button>
           <Popconfirm
             title="确定要删除该字典吗？"
