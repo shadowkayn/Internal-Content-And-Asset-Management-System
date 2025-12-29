@@ -7,18 +7,30 @@ import { z } from "zod";
 
 // 定义数据格式
 const dictSchema = z.object({
-  dictCode: z.string().min(1, "请输入字典编码"),
+  dictCode: z
+    .string()
+    .regex(
+      /^sys_[a-zA-Z0-9_]+$/,
+      "字典编码必须以 sys_ 开头，后面可跟字母、数字、下划线",
+    ),
   dictName: z.string().min(1, "请输入字典名称"),
+  dictStatus: z.enum(
+    ["active", "inactive"],
+    "状态参数无效，请输入active或inactive",
+  ),
 });
 
 // 状态枚举校验
 const updateStatusSchema = z.object({
   id: z.string().min(1, "ID不能为空"),
-  status: z.enum(["active", "inactive"], "状态参数无效"),
+  dictStatus: z.enum(
+    ["active", "inactive"],
+    "状态参数无效，请输入active或inactive",
+  ),
 });
 
-export async function addDictAction(formData: FormData) {
-  const rawData = Object.fromEntries(formData);
+export async function addDictAction(rawData: any) {
+  console.log("addDictAction", rawData);
   // 字段校验放在actions层里面
   // 格式校验
   const validatedFields = dictSchema.safeParse(rawData);
@@ -113,10 +125,10 @@ export async function updateDictStatus(params: any) {
     return { error: validatedFields.error.issues[0].message };
   }
 
-  const { id, status } = validatedFields.data;
+  const { id, dictStatus } = validatedFields.data;
 
   try {
-    await SysDictService.updateDictStatus(id, status);
+    await SysDictService.updateDictStatus(id, dictStatus);
     revalidatePath("/admin/system/dictionary");
 
     return { success: true };

@@ -1,5 +1,3 @@
-"use server";
-
 import { connectDB } from "@/lib/db";
 import { SysDictTypeModel } from "@/models/sysDictType.model";
 
@@ -108,21 +106,44 @@ export class SysDictService {
       SysDictTypeModel.find(query)
         .skip(skip)
         .limit(pageSize)
-        .sort({ createTime: -1 }),
+        .sort({ createTime: -1 })
+        .lean() // 使用 lean() 返回普通对象,
+        .transform((doc) => {
+          return doc.map((item) => ({
+            ...item,
+            id: item._id.toString(),
+            _id: undefined,
+            createdAt: new Date(item.createdAt)?.toLocaleString("zh-CN"),
+            updatedAt: new Date(item.updatedAt)?.toLocaleString("zh-CN"),
+          }));
+        }),
       SysDictTypeModel.countDocuments(query),
     ]);
+
+    // 转换为普通对象，确保可序列化
+    // const plainList = list.map((item) => ({
+    //   id: item._id.toString(),
+    //   dictName: item.dictName,
+    //   dictCode: item.dictCode,
+    //   dictStatus: item.dictStatus,
+    //   dictRemark: item.dictRemark,
+    //   dictData: item.dictData,
+    //   deleteFlag: item.deleteFlag,
+    //   createdAt: item.createdAt?.toISOString(),
+    //   updatedAt: item.updatedAt?.toISOString(),
+    // }));
 
     return { list, total };
   }
 
   // update status
-  static async updateDictStatus(id: string, status: string) {
+  static async updateDictStatus(id: string, dictStatus: string) {
     await connectDB();
 
     const existing = await SysDictTypeModel.findById(id);
     if (!existing) {
       throw new Error("字典不存在");
     }
-    return SysDictTypeModel.findByIdAndUpdate(id, { status });
+    return SysDictTypeModel.findByIdAndUpdate(id, { dictStatus });
   }
 }

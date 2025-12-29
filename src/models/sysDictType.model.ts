@@ -4,8 +4,8 @@ import { Schema, models, model } from "mongoose";
 
 // 定义具体的字典项（比如：男、女）
 const dictItemSchema = new Schema({
-  label: { type: String, required: true, unique: true }, // 字典项名称，如：启动、关闭、暂停
-  value: { type: String, required: true, unique: true }, // 字典项值
+  label: { type: String, required: true }, // 字典项名称，如：启动、关闭、暂停
+  value: { type: String, required: true }, // 字典项值
 });
 
 const sysDictTypeSchema = new Schema(
@@ -38,7 +38,7 @@ const sysDictTypeSchema = new Schema(
     },
     deleteFlag: {
       type: Number,
-      default: 1,
+      default: 0,
     },
   },
   {
