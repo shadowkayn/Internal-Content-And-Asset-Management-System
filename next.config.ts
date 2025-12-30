@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // 解决 svg-captcha 找不到字体的问题
   serverExternalPackages: ["svg-captcha"],
+  experimental: {
+    serverActions: {
+      // 允许局域网 IP 访问开发服务器资源
+      allowedOrigins: ["192.168.40.87:3000", "localhost:3000"],
+    },
+  },
 };
 
 export default nextConfig;

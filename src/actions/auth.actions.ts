@@ -9,6 +9,8 @@ import { validateEmail } from "@/lib/common";
 import { Resend } from "resend";
 import { redis } from "@/lib/redis";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 // 实现“绑定邮箱”的验证功能，目前在 Next.js 中最优雅的方案是结合 Server Actions 和 Resend（一个对开发者极其友好的邮件服务）。
 // 安装 Resend：pnpm install resend
 
@@ -95,7 +97,7 @@ export async function login(formData: FormData) {
 
   (await cookies()).set("token", token, {
     httpOnly: true,
-    secure: true, // 只在 HTTPS 连接中传输 cookie
+    secure: isProduction, // 只在 HTTPS 连接中传输 cookie
     sameSite: "strict",
     maxAge: remember ? 3 * 24 * 60 * 60 : 6 * 60 * 60, // 3天或6h
   });
@@ -107,7 +109,7 @@ export async function login(formData: FormData) {
 export async function logout() {
   (await cookies()).set("token", "", {
     httpOnly: true,
-    secure: true,
+    secure: isProduction,
     sameSite: "strict",
     expires: new Date(0),
     maxAge: 0,
@@ -158,7 +160,7 @@ export async function register(formData: FormData) {
 
     (await cookies()).set("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       sameSite: "strict",
     });
 

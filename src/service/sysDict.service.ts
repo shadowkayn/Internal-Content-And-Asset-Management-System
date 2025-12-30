@@ -56,8 +56,17 @@ export class SysDictService {
   // getDictDataList
   static async getDictDataList(id: string) {
     await connectDB();
-
-    return SysDictTypeModel.findById(id).select("dictData");
+    const res = await SysDictTypeModel.findById(id).select("dictData").lean();
+    return {
+      id: res?._id?.toString(),
+      dictData:
+        res?.dictData?.map((item: any) => ({
+          label: item.label,
+          value: item.value,
+          sort: item.sort,
+          id: item._id?.toString(),
+        })) || [],
+    };
   }
 
   // delete

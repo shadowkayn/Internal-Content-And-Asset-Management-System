@@ -6,6 +6,7 @@ import { Schema, models, model } from "mongoose";
 const dictItemSchema = new Schema({
   label: { type: String, required: true }, // 字典项名称，如：启动、关闭、暂停
   value: { type: String, required: true }, // 字典项值
+  sort: { type: Number, default: 0 },
 });
 
 const sysDictTypeSchema = new Schema(

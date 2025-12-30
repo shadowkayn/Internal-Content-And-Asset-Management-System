@@ -28,9 +28,9 @@ import {
   deleteDictAction,
   getDictListAction,
   updateDictBasicInfoAction,
-  updateDictDataAction,
   updateDictStatus,
 } from "@/actions/sysDict.actions";
+import DictDataModel from "@/app/admin/system/dictionary/components/DictDataModel";
 
 // 字典类型定义
 interface DictType {
@@ -54,6 +54,18 @@ export default function DictManagementPage() {
     total: 0,
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  // 控制数据子弹窗的状态
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [currentDict, setCurrentDict] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // 打开数据子弹窗的方法
+  const openDataModal = (record: DictType) => {
+    setCurrentDict({ id: record.id, name: record.dictName });
+    setIsDataModalOpen(true);
+  };
 
   // 表格行选择配置
   const rowSelection = {
@@ -220,6 +232,7 @@ export default function DictManagementPage() {
             type="link"
             icon={<UnorderedListOutlined />}
             style={{ color: "#52c41a" }}
+            onClick={() => openDataModal(record)}
           >
             字典数据
           </Button>
@@ -369,6 +382,18 @@ export default function DictManagementPage() {
           }}
         />
       </Card>
+
+      {currentDict && (
+        <DictDataModel
+          open={isDataModalOpen}
+          dictId={currentDict.id}
+          dictName={currentDict.name}
+          onCancel={() => {
+            setIsDataModalOpen(false);
+            setCurrentDict(null);
+          }}
+        />
+      )}
 
       {/* 弹窗 */}
       <Modal
