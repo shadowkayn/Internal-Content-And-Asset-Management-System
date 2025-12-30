@@ -30,7 +30,6 @@ const updateStatusSchema = z.object({
 });
 
 export async function addDictAction(rawData: any) {
-  console.log("addDictAction", rawData);
   // 字段校验放在actions层里面
   // 格式校验
   const validatedFields = dictSchema.safeParse(rawData);

@@ -1,21 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Modal,
-  Table,
-  Button,
-  Input,
-  InputNumber,
-  Space,
-  message,
-  Popconfirm,
-} from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Modal, Table, Button, Input, message } from "antd";
+import { PlusOutlined, DeleteOutlined, MenuOutlined } from "@ant-design/icons";
 import {
   getDictDataListAction,
   updateDictDataAction,
 } from "@/actions/sysDict.actions";
+// 引入 dnd-kit 相关组件 实现拖拽排序
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface DictDataModel {
   id?: string;
@@ -32,6 +38,42 @@ interface Props {
   dictName: string;
 }
 
+// 自定义行组件
+interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  "data-row-key": string;
+}
+
+const Row = (props: RowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: props["data-row-key"],
+  });
+
+  const style: React.CSSProperties = {
+    ...props.style,
+    transform: CSS.Transform.toString(transform),
+    transition,
+    cursor: "move",
+    ...(isDragging ? { position: "relative", zIndex: 9999 } : {}),
+  };
+
+  return (
+    <tr
+      {...props}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={style}
+    />
+  );
+};
+
 export default function DictDataModel({
   open,
   onCancel,
@@ -42,14 +84,26 @@ export default function DictDataModel({
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
 
+  // 传感器配置 (防止点击输入框时触发拖拽)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 1, // 点击移动1px以上才触发拖拽，保证点击 Input 不会失效
+      },
+    }),
+  );
+
   useEffect(() => {
+    if (!open) return;
     const fetchData = async () => {
       try {
         setLoading(true);
         setTableLoading(true);
         const res: any = await getDictDataListAction(dictId);
         if (res.success) {
-          setDataList(res.list?.dictData || ([] as DictDataModel[]));
+          const list = res.list?.dictData || [];
+          console.log(list, "asdasdsad");
+          setDataList(list.sort((a: any, b: any) => a.sort - b.sort));
         } else {
           message.error(res.message);
         }
@@ -62,9 +116,16 @@ export default function DictDataModel({
     };
 
     fetchData();
-  }, [dictId]);
+  }, [dictId, open]);
 
   const columns: any = [
+    {
+      title: "排序",
+      key: "sort",
+      align: "center",
+      width: 60,
+      render: () => <MenuOutlined style={{ cursor: "grab", color: "#999" }} />,
+    },
     {
       title: "字典标签",
       dataIndex: "label",
@@ -130,7 +191,6 @@ export default function DictDataModel({
     } else {
       message.error(res.error);
     }
-    console.log(dataList, "submit");
   };
 
   const addRow = () => {
@@ -140,8 +200,30 @@ export default function DictDataModel({
         label: "",
         value: "",
         sort: dataList.length + 1,
+        // 如果没有 id，临时给一个 key 供拖拽使用
+        id: `temp-${Date.now()}`,
       },
     ]);
+  };
+
+  // 拖拽结束逻辑
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (active.id !== over?.id) {
+      setDataList((prev) => {
+        const activeIndex = prev.findIndex((item) => item.id === active.id);
+        const overIndex = prev.findIndex((item) => item.id === over?.id);
+
+        if (activeIndex === -1 || overIndex === -1) return prev;
+
+        const nexList = arrayMove(prev, activeIndex, overIndex);
+
+        // 重新计算 sort 字段
+        return nexList.map((item, index) => ({
+          ...item,
+          sort: index + 1,
+        }));
+      });
+    }
   };
 
   return (
@@ -159,14 +241,28 @@ export default function DictDataModel({
           新增一项
         </Button>
       </div>
-      <Table
-        dataSource={dataList}
-        loading={tableLoading}
-        columns={columns}
-        pagination={false}
-        rowKey={(record) => record.id || record.dictId!}
-        scroll={{ y: 400 }}
-      />
+
+      {/*DndContext 包裹 Table*/}
+      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+        <SortableContext
+          items={dataList.map((item) => item.id!)}
+          strategy={verticalListSortingStrategy}
+        >
+          <Table
+            dataSource={dataList}
+            loading={tableLoading}
+            columns={columns}
+            pagination={false}
+            rowKey="id"
+            scroll={{ y: 400 }}
+            components={{
+              body: {
+                row: Row,
+              },
+            }}
+          />
+        </SortableContext>
+      </DndContext>
     </Modal>
   );
 }

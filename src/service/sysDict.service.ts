@@ -57,7 +57,7 @@ export class SysDictService {
   static async getDictDataList(id: string) {
     await connectDB();
     const res = await SysDictTypeModel.findById(id).select("dictData").lean();
-    return {
+    const data = {
       id: res?._id?.toString(),
       dictData:
         res?.dictData?.map((item: any) => ({
@@ -67,6 +67,8 @@ export class SysDictService {
           id: item._id?.toString(),
         })) || [],
     };
+
+    return JSON.parse(JSON.stringify(data));
   }
 
   // delete
@@ -116,6 +118,7 @@ export class SysDictService {
         .skip(skip)
         .limit(pageSize)
         .sort({ createTime: -1 })
+        .select("-dictData")
         .lean() // 使用 lean() 返回普通对象,
         .transform((doc) => {
           return doc.map((item) => ({
