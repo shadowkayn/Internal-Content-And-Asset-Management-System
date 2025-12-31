@@ -130,6 +130,10 @@ export async function register(formData: FormData) {
       return { error: "用户名、密码和邮箱不能为空" };
     }
 
+    if (password.length < 6) {
+      return { error: "密码长度不能小于6位" };
+    }
+
     if (!validateEmail(email)) {
       return { error: "邮箱格式不正确" };
     }

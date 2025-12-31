@@ -3,9 +3,10 @@
 import { connectDB } from "@/lib/db";
 import User from "@/models/user.model";
 import { hashPassword } from "@/lib/password";
+import { UserListService } from "@/service/userList.service";
 
 // add
-export async function createUser(_: any, formData: FormData) {
+export async function addUserAction(_: any, formData: FormData) {
   await connectDB();
 
   const username = formData.get("username") as string;
@@ -31,17 +32,13 @@ export async function createUser(_: any, formData: FormData) {
 }
 
 // list
-export async function listUsers(page: number = 1, pageSize: number = 10) {
-  await connectDB();
-
-  const skip = (page - 1) * pageSize;
-
-  const [list, total] = await Promise.all([
-    User.find().skip(skip).limit(pageSize).select("-password"),
-    User.countDocuments(),
-  ]);
-
-  return { list, total };
+export async function getUserListAction(params: any) {
+  try {
+    const result = await UserListService.getUserList(params);
+    return { success: true, result };
+  } catch (e) {
+    return { error: "查询失败" };
+  }
 }
 
 // update

@@ -2,12 +2,15 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IUser extends Document {
   username: string;
+  nickname: string;
   password: string;
   role: "admin" | "editor" | "viewer";
   permissions: [string];
   status: "active" | "disabled";
   email: string;
   avatar: string;
+  phone: string;
+  deleteFlag: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +20,14 @@ const UserSchema: Schema<IUser> = new Schema(
     username: {
       type: String,
       required: true,
+      unique: true,
+      trim: true,
+    },
+    nickname: {
+      type: String,
+    },
+    email: {
+      type: String,
       unique: true,
       trim: true,
     },
@@ -38,6 +49,14 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       enum: ["active", "disabled"],
       default: "active",
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    deleteFlag: {
+      type: Number,
+      default: 0,
     },
   },
   {
