@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Card,
   Form,
@@ -34,6 +34,7 @@ export default function AuthPage() {
   const [btnLoading, setBtnLoading] = useState(false);
   // 倒计时
   const [countdown, setCountdown] = useState(0);
+  const captchaRef = useRef<HTMLImageElement>(null);
 
   // 倒计时逻辑
   useEffect(() => {
@@ -68,6 +69,13 @@ export default function AuthPage() {
     }
   };
 
+  const refreshCaptcha = () => {
+    if (captchaRef.current) {
+      captchaRef.current.src = "/api/captcha?" + Date.now();
+    }
+    loginForm.resetFields(["captcha"]);
+  };
+
   function loginFn(values: any) {
     const { remember, ...loginValues } = values;
     const formData = new FormData();
@@ -88,10 +96,13 @@ export default function AuthPage() {
           window.location.href = "/admin/dashboard";
         } else {
           message.error(res.error);
+          // 自动刷新验证码
+          refreshCaptcha();
         }
       })
       .catch((err) => {
         message.error(err.message);
+        refreshCaptcha();
       })
       .finally(() => {
         setBtnLoading(false);
@@ -180,6 +191,7 @@ export default function AuthPage() {
                         prefix={<SafetyCertificateOutlined />}
                       />
                       <img
+                        ref={captchaRef}
                         src="/api/captcha"
                         alt="captcha"
                         style={styles.captchaImg}
