@@ -102,7 +102,6 @@ export default function DictDataModel({
         const res: any = await getDictDataListAction(dictId);
         if (res.success) {
           const list = res.list?.dictData || [];
-          console.log(list, "asdasdsad");
           setDataList(list.sort((a: any, b: any) => a.sort - b.sort));
         } else {
           message.error(res.message);

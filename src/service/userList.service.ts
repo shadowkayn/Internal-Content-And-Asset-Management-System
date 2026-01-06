@@ -72,6 +72,7 @@ export class UserListService {
   static async updateUser(data: any) {
     await connectDB();
 
+    console.log("data", data);
     const { id, username, password, ...updateData } = data;
 
     if (!id) throw new Error("用户ID不能为空");

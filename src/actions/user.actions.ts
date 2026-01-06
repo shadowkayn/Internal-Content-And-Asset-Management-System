@@ -1,57 +1,69 @@
 "use server";
 
-import { connectDB } from "@/lib/db";
-import User from "@/models/user.model";
-import { hashPassword } from "@/lib/password";
 import { UserListService } from "@/service/userList.service";
+import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate";
+import { z } from "zod";
+
+const statusSchema = z.object({
+  status: z.enum(
+    ["active", "disabled"],
+    "状态参数无效，请输入active或disabled",
+  ),
+});
 
 // add
-export async function addUserAction(_: any, formData: FormData) {
-  await connectDB();
-
-  const username = formData.get("username") as string;
-  const password = formData.get("password") as string;
-  const role = formData.get("role") as string;
-
-  if (!username || !password) {
-    return { error: "用户名或密码不能为空" };
+export async function addUserAction(data: any) {
+  const validatedData = statusSchema.safeParse(data);
+  if (!validatedData.success) {
+    return { error: validatedData.error.issues[0].message };
   }
 
-  const exists = await User.findOne({ username });
-  if (exists) {
-    return { error: "用户已存在" };
+  try {
+    await UserListService.createUser(data);
+    revalidatePath("/admin/users/list");
+
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "新增失败" };
   }
-
-  await User.create({
-    username,
-    password: await hashPassword(password),
-    role,
-  });
-
-  return { success: true };
 }
 
 // list
 export async function getUserListAction(params: any) {
   try {
     const result = await UserListService.getUserList(params);
+
     return { success: true, result };
-  } catch (e) {
-    return { error: "查询失败" };
+  } catch (e: any) {
+    return { error: e.message || "查询失败" };
   }
 }
 
 // update
-export async function updateUser(
-  userId: string,
-  data: {
-    status?: "active" | "disabled";
-    role?: "admin" | "editor" | "viewer";
-  },
-) {
-  await connectDB();
+export async function updateUserAction(data: any) {
+  const validatedData = statusSchema.safeParse(data);
+  if (!validatedData.success) {
+    return { error: validatedData.error.issues[0].message };
+  }
 
-  await User.findByIdAndUpdate(userId, data);
+  try {
+    await UserListService.updateUser(data);
+    revalidatePath("/admin/users/list");
 
-  return { success: true };
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "更新失败" };
+  }
+}
+
+// remove
+export async function removeUserAction(ids: string[]) {
+  try {
+    await UserListService.deleteUser(ids);
+    revalidatePath("/admin/users/list");
+
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "删除失败" };
+  }
 }

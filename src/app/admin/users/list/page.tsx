@@ -22,11 +22,11 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import Image from "next/image";
-import { getUserListAction } from "@/actions/user.actions";
+import { getUserListAction, removeUserAction } from "@/actions/user.actions";
+import UserModal from "@/app/admin/users/list/components/UserModal";
 
 interface UserItem {
-  id: string;
+  id?: string;
   username: string;
   nickname: string;
   role: string;
@@ -55,6 +55,11 @@ export default function UserListPage() {
   useEffect(() => {
     searchParamsRef.current = searchParams;
   }, [searchParams]);
+
+  // 弹窗变量
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialData, setInitialData] = useState<UserItem | null>(null);
 
   const fetchData = useCallback(
     async (current = pagination.current, pageSize = pagination.pageSize) => {
@@ -96,9 +101,15 @@ export default function UserListPage() {
     fetchData().then();
   }, [fetchData]);
 
-  const handleDelete = (id: string) => {
-    message.success(`删除成功: ${id}`);
-    setDataSource(dataSource.filter((item) => item.id !== id));
+  const handleDelete = async (id: string) => {
+    const ids = [id];
+    const res = await removeUserAction(ids);
+    if (res.success) {
+      message.success("删除成功");
+      await fetchData();
+    } else {
+      message.error(res.error);
+    }
   };
 
   const onSearch = () => {
@@ -110,6 +121,29 @@ export default function UserListPage() {
     setSearchParams(defaultParams);
     searchParamsRef.current = defaultParams; // 立即同步 Ref
     fetchData(1, pagination.pageSize);
+  };
+
+  const addUserFunc = () => {
+    setIsModalOpen(true);
+    setIsEditMode(false);
+    setInitialData(null);
+  };
+
+  const editUserFunc = (row: UserItem) => {
+    console.log("row", row);
+    setIsModalOpen(true);
+    setIsEditMode(true);
+    setInitialData(row);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setInitialData(null);
+  };
+
+  const handleSuccessCallback = () => {
+    handleCloseModal();
+    onSearch();
   };
 
   const columns: ColumnsType<UserItem> = [
@@ -180,12 +214,16 @@ export default function UserListPage() {
       width: 150,
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" icon={<EditOutlined />}>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => editUserFunc(record)}
+          >
             编辑
           </Button>
           <Popconfirm
             title="确定要删除该用户吗？"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.id!)}
             okText="确定"
             cancelText="取消"
           >
@@ -240,7 +278,7 @@ export default function UserListPage() {
             </Button>
           </Space>
 
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={addUserFunc}>
             新增用户
           </Button>
         </div>
@@ -268,6 +306,14 @@ export default function UserListPage() {
           }}
         />
       </Card>
+
+      <UserModal
+        open={isModalOpen}
+        isEditMode={isEditMode}
+        initialData={initialData}
+        onClose={handleCloseModal}
+        onSuccessCallback={handleSuccessCallback}
+      />
     </div>
   );
 }
