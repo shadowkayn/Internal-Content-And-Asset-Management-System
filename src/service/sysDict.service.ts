@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db";
 import { SysDictTypeModel } from "@/models/sysDictType.model";
+import mongoose from "mongoose";
 
 export class SysDictService {
   // add
@@ -54,9 +55,28 @@ export class SysDictService {
   }
 
   // getDictDataList
-  static async getDictDataList(id: string) {
+  static async getDictDataList(idOrCode: string) {
     await connectDB();
-    const res = await SysDictTypeModel.findById(id).select("dictData").lean();
+
+    let query: any;
+
+    // 判断是否为合法的 ObjectId 格式
+    if (mongoose.Types.ObjectId.isValid(idOrCode)) {
+      // 如果是合法 ID 格式，同时查询 ID 或 code
+      query = {
+        $or: [{ _id: idOrCode }, { dictCode: idOrCode }],
+      };
+    } else {
+      // 如果明显不是 ID 格式（比如 'status'），只查询 dictCode
+      query = { dictCode: idOrCode };
+    }
+
+    const res = await SysDictTypeModel.findOne(query).select("dictData").lean();
+
+    if (!res) {
+      throw new Error("字典不存在");
+    }
+
     const data = {
       id: res?._id?.toString(),
       dictData:

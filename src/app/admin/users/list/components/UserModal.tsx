@@ -79,7 +79,6 @@ export default function UserModal({
       };
       let res;
       if (isEditMode) {
-        console.log("params", params);
         res = await updateUserAction(params);
       } else {
         res = await addUserAction(params);

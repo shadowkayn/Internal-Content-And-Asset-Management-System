@@ -22,6 +22,8 @@ import {
   DeleteOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
+import CommonSelect from "@/components/common/CommonSelect";
+import ContentModal from "@/app/admin/contents/list/components/ContentModal";
 
 const { Option } = Select;
 
@@ -37,9 +39,14 @@ interface ContentItem {
 }
 
 export default function ContentListPage() {
-  const [form] = Form.useForm();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // 模拟数据
   const initialData: ContentItem[] = [
@@ -72,17 +79,21 @@ export default function ContentListPage() {
     },
   ];
 
-  const [dataSource, setDataSource] = useState(initialData);
+  const onClose = () => {
+    setIsModalOpen(false);
+    setEditItem(null);
+  };
+
+  const onSuccessCallback = () => {
+    onClose();
+  };
 
   // 删除操作
-  const handleDelete = (id: string) => {
-    setDataSource(dataSource.filter((item) => item.id !== id));
-    message.success("删除成功");
-  };
+  const handleDelete = (id: string) => {};
 
   // 打开编辑/新增弹窗
   const showModal = (record?: ContentItem) => {
-    setEditingItem(record || null);
+    setEditItem(record || null);
     setIsModalOpen(true);
   };
 
@@ -142,6 +153,12 @@ export default function ContentListPage() {
       align: "center",
     },
     {
+      title: "更新日期",
+      dataIndex: "updateAt",
+      key: "updateAt",
+      align: "center",
+    },
+    {
       title: "操作",
       key: "action",
       align: "center",
@@ -180,19 +197,28 @@ export default function ContentListPage() {
           style={{ justifyContent: "space-between", width: "100%" }}
         >
           <Space wrap>
-            <Form.Item name="keyword" label={"标题"}>
+            <Form.Item name="keyword" label={"内容标题"}>
               <Input
                 placeholder="输入标题关键词"
                 prefix={<SearchOutlined />}
                 style={{ width: 250 }}
               />
             </Form.Item>
-            <Form.Item name="status" label={"状态"}>
-              <Select placeholder="选择状态" style={{ width: 120 }} allowClear>
-                <Option value="published">已发布</Option>
-                <Option value="draft">草稿</Option>
-                <Option value="archived">已归档</Option>
-              </Select>
+            <Form.Item name="status" label={"内容状态"}>
+              <CommonSelect
+                dictCode="sys_content_status"
+                placeholder="请选择状态"
+                style={{ width: 120 }}
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item name="category" label={"内容分类"}>
+              <CommonSelect
+                dictCode="sys_content_category"
+                placeholder="请选择分类"
+                style={{ width: 120 }}
+                allowClear
+              />
             </Form.Item>
             <Button type="primary" icon={<SearchOutlined />}>
               搜索
@@ -214,38 +240,34 @@ export default function ContentListPage() {
       <Card variant={"outlined"}>
         <Table
           columns={columns}
-          dataSource={dataSource}
+          dataSource={initialData}
           rowKey="id"
           pagination={{
-            pageSize: 10,
-            showTotal: (total) => `共 ${total} 条数据`,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showQuickJumper: true,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条记录`,
+            onChange: (page, pageSize) => {
+              setPagination((prev) => ({
+                ...prev,
+                current: page,
+                pageSize: pageSize || prev.pageSize,
+              }));
+            },
           }}
         />
       </Card>
 
       {/* 新增/编辑弹窗 */}
-      <Modal
-        title={editingItem ? "编辑内容" : "新增内容"}
-        open={isModalOpen}
-        onOk={() => setIsModalOpen(false)}
-        onCancel={() => setIsModalOpen(false)}
-        destroyOnClose
-      >
-        <Form layout="vertical" initialValues={editingItem || {}}>
-          <Form.Item label="内容标题" name="title" rules={[{ required: true }]}>
-            <Input placeholder="请输入标题" />
-          </Form.Item>
-          <Form.Item label="分类" name="category">
-            <Select placeholder="选择分类">
-              <Option value="technology">技术</Option>
-              <Option value="design">设计</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="内容摘要" name="summary">
-            <Input.TextArea rows={4} placeholder="请输入摘要..." />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <ContentModal
+        isModalOpen={isModalOpen}
+        isEditMode={isEditMode}
+        onClose={onClose}
+        initialData={editItem}
+        onSuccessCallback={onSuccessCallback}
+      />
     </div>
   );
 }
