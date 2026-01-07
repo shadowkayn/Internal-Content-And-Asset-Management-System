@@ -91,10 +91,16 @@ export default function ContentListPage() {
   // 删除操作
   const handleDelete = (id: string) => {};
 
-  // 打开编辑/新增弹窗
-  const showModal = (record?: ContentItem) => {
-    setEditItem(record || null);
+  const addContentFunc = () => {
     setIsModalOpen(true);
+    setEditItem(null);
+    setIsEditMode(false);
+  };
+
+  const editContentFunc = (record: any) => {
+    setIsModalOpen(true);
+    setEditItem(record);
+    setIsEditMode(true);
   };
 
   // 表格列定义
@@ -168,7 +174,7 @@ export default function ContentListPage() {
           <Button
             type="text"
             icon={<EditOutlined />}
-            onClick={() => showModal(record)}
+            onClick={() => editContentFunc(record)}
             style={{ color: "#1890ff" }}
           >
             编辑
@@ -229,7 +235,7 @@ export default function ContentListPage() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => showModal()}
+            onClick={() => addContentFunc()}
           >
             新增内容
           </Button>
@@ -265,7 +271,7 @@ export default function ContentListPage() {
         isModalOpen={isModalOpen}
         isEditMode={isEditMode}
         onClose={onClose}
-        initialData={editItem}
+        editItem={editItem}
         onSuccessCallback={onSuccessCallback}
       />
     </div>

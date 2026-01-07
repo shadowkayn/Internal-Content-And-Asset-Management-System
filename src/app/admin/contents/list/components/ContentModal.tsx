@@ -1,5 +1,5 @@
 import { Form, Input, message, Modal } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CommonSelect from "@/components/common/CommonSelect";
 
 interface ContentItem {
@@ -24,6 +24,17 @@ export default function ContentModal({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (isModalOpen) {
+      form.resetFields();
+      if (isEditMode && editItem) {
+        form.setFieldsValue(editItem);
+      } else {
+        form.setFieldsValue(null);
+      }
+    }
+  }, [editItem, form, isEditMode, isModalOpen]);
+
   const onSubmit = async () => {
     try {
       setLoading(true);
@@ -47,11 +58,7 @@ export default function ContentModal({
       onOk={onSubmit}
       onCancel={onClose}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={isEditMode ? editItem : {}}
-      >
+      <Form form={form} layout="vertical">
         <Form.Item
           label="内容标题"
           name="title"
