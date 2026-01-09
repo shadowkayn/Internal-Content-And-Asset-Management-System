@@ -111,9 +111,19 @@ export class ContentService {
       }
     } else if (role === "editor") {
       // 编辑者：自己所有的文章 OR 别人已发布的文章（不看别人的归档）
-      andConditions.push({
-        $or: [{ author: userId }, { status: "published" }],
-      });
+      if (status) {
+        // 如果编辑者选了状态，必须同时满足：[该状态] 且 [是自己写的 OR 别人已发布的]
+        // 这样即便他搜 status=archived，也只能搜到他自己的归档
+        andConditions.push({ status });
+        andConditions.push({
+          $or: [{ author: userId }, { status: "published" }],
+        });
+      } else {
+        // 默认情况：看自己所有的 + 别人发布的（不看别人的归档和草稿）
+        andConditions.push({
+          $or: [{ author: userId }, { status: "published" }],
+        });
+      }
     } else {
       // 浏览者：只能查看已发布的文章
       andConditions.push({ status: "published" });
@@ -124,12 +134,6 @@ export class ContentService {
     }
     if (category) {
       andConditions.push({ category });
-    }
-    // 处理外部传入的 status：如果用户选了状态，且这个状态不冲突
-    if (status) {
-      // 如果是普通用户，他传 status=draft，最终查询会变成 {status: 'published', status: 'draft'}
-      // 这会导致结果为空（正确行为），而不是越权查到草稿
-      andConditions.push({ status });
     }
 
     const query = { $and: andConditions };
