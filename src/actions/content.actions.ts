@@ -3,100 +3,72 @@
 import { connectDB } from "@/lib/db";
 import Content from "@/models/content.model";
 import { getCurrentUser } from "@/lib/auth";
-import { hasPermission, Permissions } from "@/constants/permissions";
+import { withAuthContext } from "@/lib/withContext";
+import { z } from "zod";
+import { ContentService } from "@/service/content.service";
 
-export async function createContent(_: any, formData: FormData) {
-  await connectDB();
+const createContentSchema = z.object({
+  title: z.string({ message: "标题不能为空" }).min(1, "标题不能为空"),
+  content: z.string({ message: "内容不能为空" }).min(1, "内容不能为空"),
+  status: z.string({ message: "状态不能为空" }).min(1, "状态不能为空"),
+  category: z.string({ message: "分类不能为空" }).min(1, "分类不能为空"),
+});
 
-  const user = await getCurrentUser();
+const editContentSchema = createContentSchema.extend({
+  id: z.string({ message: "ID 不能为空" }).min(1, "ID 不能为空"),
+});
 
-  if (!user) {
-    return { error: "未登录" };
+export const createContentAction = withAuthContext(async (data: any) => {
+  console.log("createContentAction", data);
+  // 使用 zod 校验参数
+  const validatedFields = createContentSchema.safeParse(data);
+  console.log("validatedFields", validatedFields);
+
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.issues[0].message };
   }
 
-  // 权限不是写在页面里，而是在业务层
-  if (!(await hasPermission(Permissions.CONTENT_CREATE))) {
-    return { error: "无权限" };
+  try {
+    await ContentService.createContent(validatedFields.data);
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "创建失败" };
+  }
+});
+
+export const updateContentAction = withAuthContext(async (data: any) => {
+  // 使用 zod 校验参数
+  const validatedFields = editContentSchema.safeParse(data);
+  console.log(validatedFields, "validatedFields");
+
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.issues[0].message };
   }
 
-  const title = formData.get("title") as string;
-  const content = formData.get("content") as string;
-
-  await Content.create({
-    title,
-    content,
-    // 防止越权的核心手段
-    author: user._id,
-  });
-
-  return { success: true };
-}
-
-export async function listContents(page: number = 1, pageSize: number = 10) {
-  await connectDB();
-
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { error: "未登录" };
+  try {
+    await ContentService.updateContent(validatedFields.data);
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "更新失败" };
   }
+});
 
-  const filter: any = {};
-
-  // editor 只能看到自己的编辑的内容
-  // 数据层控制权限
-  if (await hasPermission(Permissions.CONTENT_UPDATE)) {
-    filter.author = user._id;
+export const getArticleListAction = withAuthContext(async (params: any) => {
+  try {
+    const result = await ContentService.getContentList(params);
+    return { success: true, data: result };
+  } catch (e: any) {
+    return { error: e.message || "获取列表失败" };
   }
+});
 
-  const skip = (page - 1) * pageSize;
-
-  // Content.find(filter)：根据过滤条件查询内容文档
-  // .skip(skip)：跳过指定数量的文档，实现分页功能
-  // .limit(pageSize)：限制返回的文档数量，控制每页大小
-  // .populate("author", "username role")：关联查询作者信息，只返回 username 和 role 字段
-  // .sort({ createdAt: -1 })：按创建时间降序排列，最新内容在
-  const [list, total] = await Promise.all([
-    Content.find(filter)
-      .skip(skip)
-      .limit(pageSize)
-      .populate("author", "username role")
-      .sort({ createdAt: -1 }),
-    Content.countDocuments(filter),
-  ]);
-
-  return { list, total };
-}
-
-// 更新状态
-export async function updateContentStatus(contentId: string, status: string) {
-  await connectDB();
-
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { error: "未登录" };
+export async function deleteContentAction(ids: string[]) {
+  try {
+    await ContentService.deleteContent(ids);
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "删除失败" };
   }
-
-  if (!(await hasPermission(Permissions.CONTENT_PUBLISH))) {
-    return { error: "无权限" };
-  }
-
-  const content = await Content.findById(contentId);
-  if (!content) {
-    return { error: "内容不存在" };
-  }
-  if (
-    content.author.toString() !== user._id.toString() &&
-    user.role === "editor"
-  ) {
-    return { error: "无权操作他人内容" };
-  }
-
-  content.status = status;
-  await content.save();
-
-  return { success: true };
 }
 
 // 为什么“查看详情”也要鉴权？ 详情接口是独立的攻击面
@@ -127,42 +99,4 @@ export async function getContentDetail(contentId: string) {
   }
 
   return { data: content };
-}
-
-export async function updateContent(contentId: string, formData: FormData) {
-  await connectDB();
-
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { error: "未登录" };
-  }
-
-  if (!(await hasPermission(Permissions.CONTENT_UPDATE))) {
-    return { error: "没有编辑权限" };
-  }
-
-  const content = await Content.findById(contentId);
-
-  if (!content) {
-    return { error: "内容不存在" };
-  }
-
-  // editor 只能修改自己创建的内容
-  if (
-    user.role === "editor" &&
-    content.author.toString() !== user._id.toString()
-  ) {
-    return { error: "无权修改他人内容" };
-  }
-
-  const title = formData.get("title") as string;
-  const body = formData.get("content") as string;
-
-  content.title = title;
-  content.content = body;
-
-  await content.save();
-
-  return { success: true };
 }

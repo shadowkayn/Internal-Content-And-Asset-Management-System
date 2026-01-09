@@ -1,83 +1,113 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Table,
   Button,
-  Input,
-  Space,
-  Tag,
   Card,
   Form,
-  Select,
-  Popconfirm,
-  message,
   Image,
-  Modal,
+  Input,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
 } from "antd";
 import {
-  PlusOutlined,
-  SearchOutlined,
-  EditOutlined,
   DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
   ReloadOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import CommonSelect from "@/components/common/CommonSelect";
 import ContentModal from "@/app/admin/contents/list/components/ContentModal";
+import "./list.scss";
+import {
+  deleteContentAction,
+  getArticleListAction,
+} from "@/actions/content.actions";
+import { useDictOptions } from "@/hooks/useDictOptions";
 
-const { Option } = Select;
-
-// 模拟数据类型
 interface ContentItem {
-  id: string;
+  id?: string;
   title: string;
   cover: string;
   category: string;
-  status: "published" | "draft" | "archived";
-  author: string;
-  createdAt: string;
+  status: string;
+  content: string;
+}
+
+export function DefaultCover() {
+  return <div className={"default-cover"}></div>;
 }
 
 export default function ContentListPage() {
+  const [searchForm] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+  const [editItem, setEditItem] = useState<ContentItem | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
+  const [dataSource, setDataSource] = useState([]);
+  const { options: contentCategoryOptions } = useDictOptions(
+    "sys_content_category",
+  );
+  const { options: contentStatusOptions } =
+    useDictOptions("sys_content_status");
 
-  // 模拟数据
-  const initialData: ContentItem[] = [
-    {
-      id: "1",
-      title: "如何使用 React Server Components",
-      cover: "https://picsum.photos/100/60?random=1",
-      category: "技术",
-      status: "published",
-      author: "KAYN",
-      createdAt: "2023-10-24",
-    },
-    {
-      id: "2",
-      title: "2024 UI 设计趋势展望",
-      cover: "https://picsum.photos/100/60?random=2",
-      category: "设计",
-      status: "draft",
-      author: "Admin",
-      createdAt: "2023-10-25",
-    },
-    {
-      id: "3",
-      title: "后台系统权限架构设计",
-      cover: "https://picsum.photos/100/60?random=3",
-      category: "架构",
-      status: "published",
-      author: "KAYN",
-      createdAt: "2023-10-26",
-    },
-  ];
+  const loadData = async (
+    page = pagination.current,
+    pageSize = pagination.pageSize,
+  ) => {
+    setLoading(true);
+    const { keyword, status, category } = searchForm.getFieldsValue();
+    const params = {
+      title: keyword,
+      status,
+      category,
+      page,
+      pageSize,
+    };
+
+    try {
+      const res: any = await getArticleListAction(params);
+      if (res.success) {
+        setDataSource(res.data.list);
+        setPagination((prev) => ({
+          ...prev,
+          total: res.data.total || 0,
+        }));
+      } else {
+        message.error(res.error || "获取数据失败");
+      }
+    } catch (e: any) {
+      message.error(e.message || "获取数据失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData().then();
+  }, []);
+
+  const onSearch = () => {
+    loadData(1); // 搜索从第一页开始
+  };
+
+  const onReset = () => {
+    searchForm.resetFields();
+    loadData(1);
+  };
+
+  const handleTableChange = (page: number, pageSize: number) => {
+    loadData(page, pageSize);
+  };
 
   const onClose = () => {
     setIsModalOpen(false);
@@ -86,10 +116,27 @@ export default function ContentListPage() {
 
   const onSuccessCallback = () => {
     onClose();
+    loadData(1);
   };
 
   // 删除操作
-  const handleDelete = (id: string) => {};
+  const handleDelete = async (id: string) => {
+    const ids = [id];
+    try {
+      setLoading(true);
+      const res = await deleteContentAction(ids);
+      if (res.success) {
+        message.success("删除成功");
+        await loadData(1);
+      } else {
+        message.error(res.error || "删除失败");
+      }
+    } catch (e: any) {
+      message.error(e.message || "删除失败");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addContentFunc = () => {
     setIsModalOpen(true);
@@ -110,9 +157,13 @@ export default function ContentListPage() {
       dataIndex: "cover",
       key: "cover",
       align: "center",
-      render: (text: string) => (
-        <Image src={text} width={60} style={{ borderRadius: 4 }} alt="" />
-      ),
+      render: (src: string) => {
+        return src ? (
+          <Image src={src} width={60} style={{ borderRadius: 4 }} alt="" />
+        ) : (
+          <DefaultCover />
+        );
+      },
     },
     {
       title: "标题",
@@ -128,7 +179,10 @@ export default function ContentListPage() {
       key: "category",
       align: "center",
 
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
+      render: (category: string) => {
+        const item = contentCategoryOptions.find((i) => i.value === category);
+        return <Tag color="blue">{item.label}</Tag>;
+      },
     },
     {
       title: "状态",
@@ -137,13 +191,8 @@ export default function ContentListPage() {
       align: "center",
 
       render: (status: string) => {
-        const statusMap = {
-          published: { color: "green", text: "已发布" },
-          draft: { color: "default", text: "草稿" },
-          archived: { color: "red", text: "已归档" },
-        };
-        const item = statusMap[status as keyof typeof statusMap];
-        return <Tag color={item.color}>{item.text}</Tag>;
+        const item = contentStatusOptions.find((i) => i.value === status);
+        return <Tag color={"#44706b"}>{item.label}</Tag>;
       },
     },
     {
@@ -151,6 +200,9 @@ export default function ContentListPage() {
       dataIndex: "author",
       key: "author",
       align: "center",
+      render: (author: any) => {
+        return author.nickname;
+      },
     },
     {
       title: "发布日期",
@@ -159,9 +211,18 @@ export default function ContentListPage() {
       align: "center",
     },
     {
+      title: "更新人",
+      dataIndex: "updater",
+      key: "updater",
+      align: "center",
+      render: (author: any) => {
+        return author?.nickname || "--";
+      },
+    },
+    {
       title: "更新日期",
-      dataIndex: "updateAt",
-      key: "updateAt",
+      dataIndex: "updatedAt",
+      key: "updatedAt",
       align: "center",
     },
     {
@@ -181,7 +242,7 @@ export default function ContentListPage() {
           </Button>
           <Popconfirm
             title="确定要删除这篇文章吗？"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.id!)}
             okText="确定"
             cancelText="取消"
           >
@@ -199,18 +260,19 @@ export default function ContentListPage() {
       {/* 搜索筛选区域 */}
       <Card variant={"outlined"} style={{ marginBottom: 0 }}>
         <Form
+          form={searchForm}
           layout="inline"
           style={{ justifyContent: "space-between", width: "100%" }}
         >
           <Space wrap>
-            <Form.Item name="keyword" label={"内容标题"}>
+            <Form.Item name="keyword" label={"文章标题"}>
               <Input
                 placeholder="输入标题关键词"
                 prefix={<SearchOutlined />}
                 style={{ width: 250 }}
               />
             </Form.Item>
-            <Form.Item name="status" label={"内容状态"}>
+            <Form.Item name="status" label={"文章状态"}>
               <CommonSelect
                 dictCode="sys_content_status"
                 placeholder="请选择状态"
@@ -218,7 +280,7 @@ export default function ContentListPage() {
                 allowClear
               />
             </Form.Item>
-            <Form.Item name="category" label={"内容分类"}>
+            <Form.Item name="category" label={"文章分类"}>
               <CommonSelect
                 dictCode="sys_content_category"
                 placeholder="请选择分类"
@@ -226,10 +288,12 @@ export default function ContentListPage() {
                 allowClear
               />
             </Form.Item>
-            <Button type="primary" icon={<SearchOutlined />}>
+            <Button type="primary" icon={<SearchOutlined />} onClick={onSearch}>
               搜索
             </Button>
-            <Button icon={<ReloadOutlined />}>重置</Button>
+            <Button icon={<ReloadOutlined />} onClick={onReset}>
+              重置
+            </Button>
           </Space>
 
           <Button
@@ -245,8 +309,9 @@ export default function ContentListPage() {
       {/* 表格区域 */}
       <Card variant={"outlined"}>
         <Table
+          loading={loading}
           columns={columns}
-          dataSource={initialData}
+          dataSource={dataSource}
           rowKey="id"
           pagination={{
             current: pagination.current,
@@ -255,13 +320,7 @@ export default function ContentListPage() {
             showQuickJumper: true,
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条记录`,
-            onChange: (page, pageSize) => {
-              setPagination((prev) => ({
-                ...prev,
-                current: page,
-                pageSize: pageSize || prev.pageSize,
-              }));
-            },
+            onChange: (page, pageSize) => handleTableChange(page, pageSize),
           }}
         />
       </Card>

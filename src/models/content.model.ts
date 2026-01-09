@@ -7,14 +7,21 @@ const ContentSchema = new Schema(
       required: true,
       trim: true,
     },
-    body: {
+    content: {
       type: String,
       required: true,
     },
     status: {
       type: String,
-      enum: ["draft", "published"],
-      default: "draft",
+      required: true,
+    },
+    cover: {
+      type: String,
+      default: "",
+    },
+    category: {
+      type: String,
+      required: true,
     },
     // 关联用户
     // 这段代码定义了 Content 模型中的 author 字段，具体解释如下：
@@ -27,6 +34,14 @@ const ContentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    updater: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    deleteFlag: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true },

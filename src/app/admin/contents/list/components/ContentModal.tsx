@@ -1,15 +1,24 @@
 import { Form, Input, message, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import CommonSelect from "@/components/common/CommonSelect";
+import {
+  createContentAction,
+  updateContentAction,
+} from "@/actions/content.actions";
 
 interface ContentItem {
+  id?: string;
   title: string;
+  content: string;
+  category: string;
+  status: string;
+  cover: string;
 }
 
 interface ContentModalProps {
   isModalOpen: boolean;
   isEditMode: boolean;
-  editItem: ContentItem;
+  editItem: ContentItem | null;
   onClose: () => void;
   onSuccessCallback: () => void;
 }
@@ -39,6 +48,23 @@ export default function ContentModal({
     try {
       setLoading(true);
       const values = await form.validateFields();
+      let res;
+      if (isEditMode) {
+        const params = {
+          ...values,
+          id: editItem?.id,
+        };
+        console.log("params", params);
+        res = await updateContentAction(params);
+      } else {
+        res = await createContentAction(values);
+      }
+      if (res.success) {
+        message.success(isEditMode ? "更新成功" : "新增成功");
+        onSuccessCallback();
+      } else {
+        message.error(res.error || (isEditMode ? "更新失败" : "新增失败"));
+      }
     } catch (e: any) {
       if (e.errorFields) {
         message.error("请检查表单填写是否完整或正确。");
@@ -66,7 +92,7 @@ export default function ContentModal({
         >
           <Input placeholder="请输入标题" />
         </Form.Item>
-        <Form.Item label="内容封面" name="coverPic">
+        <Form.Item label="内容封面" name="cover">
           <Input placeholder="内容封面" />
         </Form.Item>
         <Form.Item
@@ -81,7 +107,7 @@ export default function ContentModal({
         </Form.Item>
         <Form.Item
           label="内容状态"
-          name="category"
+          name="status"
           rules={[{ required: true, message: "请选择状态" }]}
         >
           <CommonSelect
@@ -89,7 +115,11 @@ export default function ContentModal({
             placeholder="请选择状态"
           />
         </Form.Item>
-        <Form.Item label="内容摘要" name="summary">
+        <Form.Item
+          label="内容摘要"
+          name="content"
+          rules={[{ required: true, message: "请输入摘要" }]}
+        >
           <Input.TextArea rows={4} placeholder="请输入摘要..." />
         </Form.Item>
       </Form>
