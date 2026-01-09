@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { withAuthContext } from "@/lib/withContext";
 import { z } from "zod";
 import { ContentService } from "@/service/content.service";
+import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate";
 
 const createContentSchema = z.object({
   title: z.string({ message: "标题不能为空" }).min(1, "标题不能为空"),
@@ -19,10 +20,8 @@ const editContentSchema = createContentSchema.extend({
 });
 
 export const createContentAction = withAuthContext(async (data: any) => {
-  console.log("createContentAction", data);
   // 使用 zod 校验参数
   const validatedFields = createContentSchema.safeParse(data);
-  console.log("validatedFields", validatedFields);
 
   if (!validatedFields.success) {
     return { error: validatedFields.error.issues[0].message };
@@ -30,6 +29,7 @@ export const createContentAction = withAuthContext(async (data: any) => {
 
   try {
     await ContentService.createContent(validatedFields.data);
+    revalidatePath("/admin/content/list");
     return { success: true };
   } catch (e: any) {
     return { error: e.message || "创建失败" };
@@ -47,6 +47,7 @@ export const updateContentAction = withAuthContext(async (data: any) => {
 
   try {
     await ContentService.updateContent(validatedFields.data);
+    revalidatePath("/admin/content/list");
     return { success: true };
   } catch (e: any) {
     return { error: e.message || "更新失败" };
@@ -65,6 +66,7 @@ export const getArticleListAction = withAuthContext(async (params: any) => {
 export async function deleteContentAction(ids: string[]) {
   try {
     await ContentService.deleteContent(ids);
+    revalidatePath("/admin/content/list");
     return { success: true };
   } catch (e: any) {
     return { error: e.message || "删除失败" };

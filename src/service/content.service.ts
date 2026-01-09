@@ -102,8 +102,15 @@ export class ContentService {
 
     if (role === "admin") {
       // 全量数据
+      // 如果前端传了 status（比如管理员在下拉框选了“已归档”），那就查对应的状态
+      if (status) {
+        andConditions.push({ status });
+      } else {
+        // 如果前端没传 status（默认进页面），帮管理员隐藏归档，让他看“有用的”东西
+        andConditions.push({ status: { $ne: "archived" } });
+      }
     } else if (role === "editor") {
-      // 编辑者：只能查看自己创建的文章 or 别人已发布的文章
+      // 编辑者：自己所有的文章 OR 别人已发布的文章（不看别人的归档）
       andConditions.push({
         $or: [{ author: userId }, { status: "published" }],
       });
@@ -166,9 +173,9 @@ export class ContentService {
       ContentModel.find(query)
         .populate("author", "nickname role")
         .populate("updater", "nickname role")
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
-        .sort({ createTime: -1 })
         .lean(),
       ContentModel.countDocuments(query),
     ]);

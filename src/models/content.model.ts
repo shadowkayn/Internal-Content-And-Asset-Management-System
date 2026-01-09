@@ -14,6 +14,8 @@ const ContentSchema = new Schema(
     status: {
       type: String,
       required: true,
+      enum: ["draft", "published", "archived"],
+      default: "draft",
     },
     cover: {
       type: String,
@@ -46,5 +48,8 @@ const ContentSchema = new Schema(
   },
   { timestamps: true },
 );
+
+// 复合索引：大幅提升前台文章列表加载速度
+ContentSchema.index({ status: 1, createdAt: -1 });
 
 export default models.Content || model("Content", ContentSchema);
