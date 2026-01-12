@@ -105,7 +105,12 @@ export default function ContentDetailPage() {
       }
     };
 
-    if (id) fetchData().then();
+    if (id) {
+      const timer = setTimeout(() => {
+        fetchData();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
   }, [id]);
 
   const onBackList = () => {
