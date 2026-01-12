@@ -49,43 +49,51 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 面包屑
+  // 动态生成面包屑
   const getBreadcrumbItems = () => {
-    const items = [{ title: "首页" }]; // 默认根节点
+    const items: { title: React.ReactNode; href?: string }[] = [
+      { title: "首页" },
+    ];
 
-    const findPathItems = (
-      menuData: any[],
-      targetKey: string,
-      parents: any[] = [],
-    ): any[] | null => {
-      for (const item of menuData) {
-        if (item.key === targetKey) {
-          return [...parents, item];
-        }
+    // 1. 将 pathname 拆分为片段，例如 /admin/contents/preview/123 -> ['admin', 'contents', 'preview', '123']
+    const snippets = pathname.split("/").filter(Boolean);
+
+    // 2. 递归查找 MenuConfig 中的 label
+    const findLabelInConfig = (key: string, config: any[]): string | null => {
+      for (const item of config) {
+        if (item.key === key) return item.label;
         if (item.children) {
-          const result = findPathItems(item.children, targetKey, [
-            ...parents,
-            item,
-          ]);
-          if (result) return result;
+          const found = findLabelInConfig(key, item.children);
+          if (found) return found;
         }
       }
       return null;
     };
 
-    const matchedItems = findPathItems(MenuConfig, pathname);
+    // 3. 逐步构建路径并匹配
+    let currentPath = "";
+    snippets.forEach((snippet, index) => {
+      currentPath += `/${snippet}`;
 
-    if (matchedItems) {
-      matchedItems.forEach((item) => {
-        items.push({ title: item.label });
-      });
-    } else if (pathname !== "/") {
-      // 兼容一些不在菜单里的页面，比如 /dashboard
-      const labelMap: Record<string, string> = { "/dashboard": "仪表盘" };
-      if (labelMap[pathname]) {
-        items.push({ title: labelMap[pathname] });
+      // 跳过根路径 /admin 本身（如果你不需要显示“后台”这一级的话）
+      if (currentPath === "/admin") return;
+
+      const label = findLabelInConfig(currentPath, MenuConfig);
+
+      if (label) {
+        // 如果在配置里找到了，直接添加
+        items.push({ title: label });
+      } else {
+        // 如果没找到，判断是否是动态 ID (比如 MongoDB ID 长度通常为 24)
+        // 或者判断是否是最后一段路径
+        if (index === snippets.length - 1) {
+          // 如果上一级是 preview，这里可以显示为“详情”
+          const isDetail =
+            snippets[index - 1] === "preview" || snippets[index - 1] === "list";
+          items.push({ title: isDetail ? "详情" : snippet });
+        }
       }
-    }
+    });
 
     return items;
   };
@@ -100,112 +108,116 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         backgroundAttachment: "fixed",
       }}
     >
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        breakpoint="lg"
-        theme="light"
-        width={220}
+      <Header
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.3)", // 极高透明度
-          backdropFilter: "blur(30px)",
-          borderRight: "none",
-          boxShadow: "10px 0 30px rgba(0,0,0,0.01)",
+          height: 64,
+          background: "rgba(255, 255, 255, 0.4)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          padding: "0 24px 0 0",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.5)",
           position: "sticky",
           top: 0,
-          zIndex: 10,
+          zIndex: 1000,
         }}
       >
-        <div
-          style={{
-            height: 64,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 18,
-            fontWeight: "bold",
-            color: "#1890ff",
-            background: "rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(10px)",
-            backgroundImage:
-              "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
-          }}
-        >
-          {collapsed ? "K" : "KAYN ADMIN"}
+        <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: "900",
+              marginRight: 40,
+              backgroundImage:
+                "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              transition: "all 0.3s",
+              cursor: "pointer",
+              width: collapsed ? 95 : 195,
+              textAlign: "center",
+            }}
+            onClick={() => router.push("/")}
+          >
+            {collapsed ? "K" : "KAYN ADMIN"}
+          </div>
+
+          <Breadcrumb items={breadcrumbItems} />
         </div>
-        <SidebarMenu />
-      </Sider>
+
+        <Space size={20}>
+          <Badge count={5} dot>
+            <BellOutlined style={{ fontSize: 18, cursor: "pointer" }} />
+          </Badge>
+          <Dropdown
+            menu={{ items: userMenuItems, onClick }}
+            placement="bottomRight"
+          >
+            <Space style={{ cursor: "pointer" }}>
+              <Avatar
+                icon={<UserOutlined />}
+                style={{ backgroundColor: "#1890ff" }}
+              />
+              <span style={{ fontWeight: 500 }}>管理员</span>
+            </Space>
+          </Dropdown>
+        </Space>
+      </Header>
 
       <Layout style={{ background: "transparent" }}>
-        <Header
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value) => setCollapsed(value)}
+          breakpoint="lg"
+          theme="light"
+          width={220}
           style={{
-            background: "rgba(255, 255, 255, 0.4)",
-            backdropFilter: "blur(15px)",
-            WebkitBackdropFilter: "blur(15px)",
-            padding: "0 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.5)",
+            backgroundColor: "rgba(255, 255, 255, 0.3)", // 极高透明度
+            backdropFilter: "blur(30px)",
+            borderRight: "none",
+            boxShadow: "10px 0 30px rgba(0,0,0,0.01)",
             position: "sticky",
             top: 0,
-            zIndex: 100,
+            zIndex: 10,
           }}
         >
-          <Breadcrumb items={breadcrumbItems} />
+          <SidebarMenu />
+        </Sider>
 
-          <Space size={20}>
-            <Badge count={5} dot>
-              <BellOutlined style={{ fontSize: 18, cursor: "pointer" }} />
-            </Badge>
-            <Dropdown
-              menu={{ items: userMenuItems, onClick }}
-              placement="bottomRight"
-            >
-              <Space style={{ cursor: "pointer" }}>
-                <Avatar
-                  icon={<UserOutlined />}
-                  style={{ backgroundColor: "#1890ff" }}
-                />
-                <span style={{ fontWeight: 500 }}>管理员</span>
-              </Space>
-            </Dropdown>
-          </Space>
-        </Header>
+        <Layout style={{ background: "transparent" }}>
+          <Content
+            style={{
+              margin: "24px 16px",
+              background: "rgba(255, 255, 255, 0.1)",
+              boxShadow:
+                "0 20px 50px rgba(147, 197, 253, 0.15), 0 10px 20px rgba(0,0,0,0.02)",
+              border: "1px solid rgba(255, 255, 255, 1)",
+              position: "relative",
+              overflowY: "auto",
+              minHeight: "83.5vh",
+              borderRadius: 8,
+              transition: "all 0.3s",
+              padding: 24,
+            }}
+          >
+            {children}
+          </Content>
 
-        <Content
-          style={{
-            margin: "24px 16px",
-            background: "rgba(255, 255, 255, 0.1)",
-            boxShadow:
-              "0 20px 50px rgba(147, 197, 253, 0.15), 0 10px 20px rgba(0,0,0,0.02)",
-            border: "1px solid rgba(255, 255, 255, 1)",
-            position: "relative",
-            overflowY: "auto",
-            minHeight: "83.5vh",
-            borderRadius: 8,
-            transition: "all 0.3s",
-            padding: 24,
-          }}
-        >
-          {children}
-        </Content>
-
-        <Footer
-          style={{
-            textAlign: "center",
-            fontSize: 14,
-            color: "#999",
-            padding: "0 0 24px 0",
-            background: "transparent",
-          }}
-        >
-          {`System Design ©${new Date().getFullYear()} Created by KAYN`}
-        </Footer>
+          <Footer
+            style={{
+              textAlign: "center",
+              fontSize: 14,
+              color: "#999",
+              padding: "0 0 24px 0",
+              background: "transparent",
+            }}
+          >
+            {`System Design ©${new Date().getFullYear()} Created by KAYN`}
+          </Footer>
+        </Layout>
       </Layout>
 
       <style jsx global>{`
@@ -222,28 +234,43 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           color: #a855f7 !important;
         }
 
-        /* 2. 移除侧边栏默认边框线 */
         .ant-layout-sider-children {
           border-right: none !important;
         }
 
-        /* 3. 让菜单背景也透明 */
         .ant-menu {
-          background: transparent !important;
+          background: rgba(255, 255, 255, 0.6) !important;
           border-right: none !important;
-        }
-
-        /* 4. 菜单项美化：变成圆角小胶囊 */
-        .ant-menu-item {
-          border-radius: 12px !important;
-          margin: 4px 12px !important;
-          width: calc(100% - 24px) !important;
         }
 
         .ant-menu-item-selected {
           background: rgba(99, 102, 241, 0.1) !important;
           color: #6366f1 !important;
           font-weight: 600;
+        }
+
+        .ant-menu-item:hover,
+        .ant-menu-submenu-title:hover {
+          background: rgba(255, 255, 255, 0.5) !important;
+          color: #6366f1 !important;
+        }
+
+        .ant-menu-submenu-selected .ant-menu-submenu-title {
+          color: #6366f1 !important;
+        }
+
+        .ant-menu-item .ant-menu-item-icon,
+        .ant-menu-submenu-title .ant-menu-item-icon {
+          font-size: 16px !important;
+          transition: transform 0.3s ease;
+        }
+
+        .ant-menu-item,
+        .ant-menu-submenu-title {
+          margin: 4px 12px !important;
+          width: calc(100% - 24px) !important;
+          border-radius: 12px !important;
+          transition: all 0.3s ease !important;
         }
       `}</style>
     </Layout>
