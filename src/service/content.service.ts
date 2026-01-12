@@ -158,6 +158,7 @@ export class ContentService {
                 id: item.author._id.toString(),
                 nickname: item.author.nickname,
                 role: item.author.role,
+                avatar: item.author.avatar,
               }
             : null,
           updater: item.updater
@@ -175,8 +176,8 @@ export class ContentService {
     // .populate("author", "nickname role")：关联查询作者信息，只返回 nickname 和 role 字段
     const [list, total] = await Promise.all([
       ContentModel.find(query)
-        .populate("author", "nickname role")
-        .populate("updater", "nickname role")
+        .populate("author", "nickname role avatar")
+        .populate("updater", "nickname role avatar")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
@@ -185,5 +186,34 @@ export class ContentService {
     ]);
 
     return { list: formatList(list), total };
+  }
+
+  static async getContentDetail(id: string) {
+    await connectDB();
+
+    if (!id) {
+      throw new Error("文章ID不能为空");
+    }
+
+    const result = await ContentModel.findById(id)
+      .populate("author", "nickname role avatar")
+      .populate("updater", "nickname role avatar")
+      .lean();
+
+    return {
+      ...result,
+      id: result._id.toString(),
+      _id: undefined,
+      createdAt: result.createdAt?.toLocaleString("zh-CN"),
+      updatedAt: result.updatedAt?.toLocaleString("zh-CN"),
+      author: result.author
+        ? {
+            id: result.author._id.toString(),
+            nickname: result.author.nickname,
+            role: result.author.role,
+            avatar: result.author.avatar,
+          }
+        : null,
+    };
   }
 }

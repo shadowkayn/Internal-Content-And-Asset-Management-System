@@ -75,30 +75,11 @@ export async function deleteContentAction(ids: string[]) {
 
 // 为什么“查看详情”也要鉴权？ 详情接口是独立的攻击面
 export async function getContentDetail(contentId: string) {
-  await connectDB();
+  try {
+    const result = await ContentService.getContentDetail(contentId);
 
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { error: "未登录" };
+    return { success: true, data: result };
+  } catch (e: any) {
+    return { error: e.message || "获取详情失败" };
   }
-
-  const content = await Content.findById(contentId).populate(
-    "author",
-    "username role",
-  );
-
-  if (!content) {
-    return { error: "内容不存在" };
-  }
-
-  // editor 只能看到自己创建的内容
-  if (
-    user.role === "editor" &&
-    content.author.toString() !== user._id.toString()
-  ) {
-    return { error: "无权查看他人内容" };
-  }
-
-  return { data: content };
 }

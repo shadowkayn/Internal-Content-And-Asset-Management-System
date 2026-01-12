@@ -111,7 +111,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Header
         style={{
           height: 64,
-          background: "rgba(255, 255, 255, 0.4)",
+          background:
+            "linear-gradient(90deg, rgba(238, 242, 255, 0.5) 0%, rgba(255, 241, 242, 0.5) 50%, rgba(240, 253, 244, 0.5) 100%)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           padding: "0 24px 0 0",
@@ -175,7 +176,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           theme="light"
           width={220}
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.3)", // 极高透明度
+            backgroundColor: "rgba(255, 255, 255, 0.1)", // 极高透明度
             backdropFilter: "blur(30px)",
             borderRight: "none",
             boxShadow: "10px 0 30px rgba(0,0,0,0.01)",
