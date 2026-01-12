@@ -93,7 +93,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const breadcrumbItems = getBreadcrumbItems();
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout
+      style={{
+        background:
+          "linear-gradient(135deg, #f5f7ff 0%, #fff1f2 50%, #f0fdf4 100%)",
+        backgroundAttachment: "fixed",
+      }}
+    >
       <Sider
         collapsible
         collapsed={collapsed}
@@ -102,7 +108,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         theme="light"
         width={220}
         style={{
-          boxShadow: "2px 0 8px 0 rgba(29,35,41,.05)",
+          backgroundColor: "rgba(255, 255, 255, 0.3)", // 极高透明度
+          backdropFilter: "blur(30px)",
+          borderRight: "none",
+          boxShadow: "10px 0 30px rgba(0,0,0,0.01)",
+          position: "sticky",
+          top: 0,
           zIndex: 10,
         }}
       >
@@ -115,7 +126,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             fontSize: 18,
             fontWeight: "bold",
             color: "#1890ff",
-            borderBottom: "1px solid #f0f0f0",
+            background: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(10px)",
+            backgroundImage:
+              "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
           }}
         >
           {collapsed ? "K" : "KAYN ADMIN"}
@@ -123,16 +140,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <SidebarMenu />
       </Sider>
 
-      <Layout style={{ background: "#f5f7f9" }}>
+      <Layout style={{ background: "transparent" }}>
         <Header
           style={{
-            background: "#fff",
+            background: "rgba(255, 255, 255, 0.4)",
+            backdropFilter: "blur(15px)",
+            WebkitBackdropFilter: "blur(15px)",
             padding: "0 24px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 1px 4px rgba(0,21,41,.08)",
-            zIndex: 9,
+            borderBottom: "1px solid rgba(255, 255, 255, 0.5)",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
           }}
         >
           <Breadcrumb items={breadcrumbItems} />
@@ -159,11 +180,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <Content
           style={{
             margin: "24px 16px",
-            padding: 24,
-            background: "#fff",
+            background: "rgba(255, 255, 255, 0.1)",
+            boxShadow:
+              "0 20px 50px rgba(147, 197, 253, 0.15), 0 10px 20px rgba(0,0,0,0.02)",
+            border: "1px solid rgba(255, 255, 255, 1)",
+            position: "relative",
+            overflowY: "auto",
+            minHeight: "83.5vh",
             borderRadius: 8,
-            minHeight: 280,
             transition: "all 0.3s",
+            padding: 24,
           }}
         >
           {children}
@@ -181,6 +207,45 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           {`System Design ©${new Date().getFullYear()} Created by KAYN`}
         </Footer>
       </Layout>
+
+      <style jsx global>{`
+        .ant-layout-sider-trigger {
+          background: rgba(255, 255, 255, 0.1) !important; /* 设为极淡的透明 */
+          backdrop-filter: blur(10px);
+          border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+          color: #6366f1 !important;
+          transition: all 0.3s ease;
+        }
+
+        .ant-layout-sider-trigger:hover {
+          background: rgba(255, 255, 255, 0.2) !important; /* 悬浮时变亮 */
+          color: #a855f7 !important;
+        }
+
+        /* 2. 移除侧边栏默认边框线 */
+        .ant-layout-sider-children {
+          border-right: none !important;
+        }
+
+        /* 3. 让菜单背景也透明 */
+        .ant-menu {
+          background: transparent !important;
+          border-right: none !important;
+        }
+
+        /* 4. 菜单项美化：变成圆角小胶囊 */
+        .ant-menu-item {
+          border-radius: 12px !important;
+          margin: 4px 12px !important;
+          width: calc(100% - 24px) !important;
+        }
+
+        .ant-menu-item-selected {
+          background: rgba(99, 102, 241, 0.1) !important;
+          color: #6366f1 !important;
+          font-weight: 600;
+        }
+      `}</style>
     </Layout>
   );
 }

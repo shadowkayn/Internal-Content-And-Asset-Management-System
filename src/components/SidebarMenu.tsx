@@ -65,6 +65,7 @@ export function SidebarMenu() {
       onClick={(item) => {
         router.push(item.key);
       }}
+      style={{ background: "transparent" }}
     />
   );
 }
