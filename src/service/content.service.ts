@@ -150,6 +150,7 @@ export class ContentService {
           title: item.title,
           status: item.status,
           category: item.category,
+          description: item.description,
           createdAt: item.createdAt?.toLocaleString("zh-CN"),
           updatedAt: item.updatedAt?.toLocaleString("zh-CN"),
           // 精确处理子对象

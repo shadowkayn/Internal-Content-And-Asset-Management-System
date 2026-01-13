@@ -18,6 +18,7 @@ import {
   Affix,
   Skeleton, // 引入骨架屏增加高级感
   message,
+  Modal,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -26,10 +27,15 @@ import {
   EyeOutlined,
   ShareAltOutlined,
   HistoryOutlined,
+  ExclamationCircleFilled,
 } from "@ant-design/icons";
+import ArticleModal from "@/app/admin/contents/list/components/ContentModal";
 
 // 假设这是你之前写的 Server Action
-import { getContentDetail } from "@/actions/content.actions";
+import {
+  deleteContentAction,
+  getContentDetail,
+} from "@/actions/content.actions";
 import { useDictOptions } from "@/hooks/useDictOptions";
 
 const { Title, Text } = Typography;
@@ -38,6 +44,8 @@ export default function ContentDetailPage() {
   const router = useRouter();
   const params = useParams(); // 2. 获取动态路由中的 id
   const id = params.id;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [article, setArticle] = useState<any>(null);
@@ -79,31 +87,33 @@ export default function ContentDetailPage() {
     },
   };
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await getContentDetail(id as string);
+      if (res.success) {
+        const { cover, status } = res.data || {};
+        const result = {
+          ...res.data,
+          cover: cover || (statusConfig?.[status]?.cover as string),
+          statusText: statusConfig?.[status]?.statusText,
+          statusDescription: statusConfig?.[status]?.description,
+          statusColor: statusConfig?.[status]?.color,
+        };
+        setArticle(result);
+        console.log("mockArticle", res.data);
+      }
+    } catch (error: any) {
+      message.error(error.message || "获取详情失败");
+      router.push("/admin/contents/preview");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 根据 ID 加载数据
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await getContentDetail(id as string);
-        if (res.success) {
-          const { cover, status } = res.data || {};
-          const result = {
-            ...res.data,
-            cover: cover || (statusConfig?.[status]?.cover as string),
-            statusText: statusConfig?.[status]?.statusText,
-            statusDescription: statusConfig?.[status]?.description,
-            statusColor: statusConfig?.[status]?.color,
-          };
-          setArticle(result);
-          console.log("mockArticle", res.data);
-        }
-      } catch (error: any) {
-        message.error(error.message || "获取详情失败");
-        router.push("/admin/contents/preview");
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchData();
 
     if (id) {
       const timer = setTimeout(() => {
@@ -115,6 +125,46 @@ export default function ContentDetailPage() {
 
   const onBackList = () => {
     router.push("/admin/contents/preview");
+  };
+
+  const onUpdateArticle = () => {
+    setIsModalOpen(true);
+  };
+
+  const onClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const { confirm } = Modal;
+
+  const onDelete = () => {
+    confirm({
+      title: "确认删除这篇文章吗?",
+      icon: <ExclamationCircleFilled />,
+      content: "删除之后文章不可恢复，确认继续？",
+      async onOk() {
+        const ids = [article.id];
+        try {
+          setLoading(true);
+          const res = await deleteContentAction(ids);
+          if (res.success) {
+            message.success("删除成功");
+            router.push("/admin/contents/preview");
+          } else {
+            message.error(res.error || "删除失败");
+          }
+        } catch (e: any) {
+          message.error(e.message || "删除失败");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
+  const onSuccessCallback = async () => {
+    onClose();
+    await fetchData();
   };
 
   if (loading) {
@@ -159,16 +209,19 @@ export default function ContentDetailPage() {
           </Space>
           <Space>
             <Button icon={<ShareAltOutlined />}>分享</Button>
-            <Button icon={<DeleteOutlined />} danger>
+            <Button icon={<DeleteOutlined />} danger onClick={onDelete}>
               删除
             </Button>
-            <Button type="primary" icon={<EditOutlined />}>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={onUpdateArticle}
+            >
               编辑内容
             </Button>
           </Space>
         </div>
       </Affix>
-
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: "0 24px" }}>
         <Row gutter={24}>
           <Col span={17}>
@@ -453,6 +506,14 @@ export default function ContentDetailPage() {
           </Col>
         </Row>
       </div>
+
+      <ArticleModal
+        isModalOpen={isModalOpen}
+        isEditMode
+        editItem={article}
+        onClose={onClose}
+        onSuccessCallback={onSuccessCallback}
+      />
     </div>
   );
 }
