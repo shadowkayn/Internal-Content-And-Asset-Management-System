@@ -1,8 +1,5 @@
 "use server";
 
-import { connectDB } from "@/lib/db";
-import Content from "@/models/content.model";
-import { getCurrentUser } from "@/lib/auth";
 import { withAuthContext } from "@/lib/withContext";
 import { z } from "zod";
 import { ContentService } from "@/service/content.service";
@@ -13,6 +10,7 @@ const createContentSchema = z.object({
   content: z.string({ message: "内容不能为空" }).min(1, "内容不能为空"),
   status: z.string({ message: "状态不能为空" }).min(1, "状态不能为空"),
   category: z.string({ message: "分类不能为空" }).min(1, "分类不能为空"),
+  description: z.string({ message: "描述不能为空" }).min(1, "描述不能为空"),
 });
 
 const editContentSchema = createContentSchema.extend({

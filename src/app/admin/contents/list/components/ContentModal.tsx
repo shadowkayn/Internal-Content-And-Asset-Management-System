@@ -116,6 +116,13 @@ export default function ContentModal({
           />
         </Form.Item>
         <Form.Item
+          label="内容描述"
+          name="description"
+          rules={[{ required: true, message: "请输入描述" }]}
+        >
+          <Input.TextArea rows={4} placeholder="请输入描述..." />
+        </Form.Item>
+        <Form.Item
           label="内容摘要"
           name="content"
           rules={[{ required: true, message: "请输入摘要" }]}
