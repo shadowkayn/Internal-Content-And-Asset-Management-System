@@ -5,6 +5,18 @@ import {
   createContentAction,
   updateContentAction,
 } from "@/actions/content.actions";
+import dynamic from "next/dynamic";
+
+// 禁用 SSR
+const RichTextEditor = dynamic(
+  () => import("@/components/common/RichTextEditor"),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ height: 200, background: "#f5f5f5", borderRadius: 12 }} />
+    ),
+  },
+);
 
 interface ContentItem {
   id?: string;
@@ -42,7 +54,7 @@ export default function ContentModal({
         form.setFieldsValue(null);
       }
     }
-  }, [editItem, form, isEditMode, isModalOpen]);
+  }, [isModalOpen]);
 
   const onSubmit = async () => {
     try {
@@ -54,7 +66,6 @@ export default function ContentModal({
           ...values,
           id: editItem?.id,
         };
-        console.log("params", params);
         res = await updateContentAction(params);
       } else {
         res = await createContentAction(values);
@@ -83,6 +94,8 @@ export default function ContentModal({
       open={isModalOpen}
       onOk={onSubmit}
       onCancel={onClose}
+      destroyOnHidden
+      width={800}
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -123,13 +136,20 @@ export default function ContentModal({
           <Input.TextArea rows={4} placeholder="请输入描述..." />
         </Form.Item>
         <Form.Item
-          label="内容摘要"
+          label="内容正文"
           name="content"
-          rules={[{ required: true, message: "请输入摘要" }]}
+          rules={[{ required: true, message: "请输入正文" }]}
         >
-          <Input.TextArea rows={4} placeholder="请输入摘要..." />
+          <RichTextEditor />
         </Form.Item>
       </Form>
+
+      <style jsx global>{`
+        .ant-modal-body {
+          max-height: 600px;
+          overflow-y: auto;
+        }
+      `}</style>
     </Modal>
   );
 }

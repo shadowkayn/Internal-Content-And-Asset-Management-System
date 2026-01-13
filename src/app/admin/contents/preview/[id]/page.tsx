@@ -28,6 +28,10 @@ import {
   ShareAltOutlined,
   HistoryOutlined,
   ExclamationCircleFilled,
+  LoadingOutlined,
+  HeartOutlined,
+  UserSwitchOutlined,
+  ConsoleSqlOutlined,
 } from "@ant-design/icons";
 import ArticleModal from "@/app/admin/contents/list/components/ContentModal";
 
@@ -222,7 +226,7 @@ export default function ContentDetailPage() {
           </Space>
         </div>
       </Affix>
-      <div style={{ maxWidth: 1200, margin: "24px auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: 1400, margin: "24px auto", padding: "0 24px" }}>
         <Row gutter={24}>
           <Col span={17}>
             <Card
@@ -248,7 +252,7 @@ export default function ContentDetailPage() {
                 />
               </div>
               <Typography>
-                <Title>{article.title}</Title>
+                <Title style={{ textAlign: "center" }}>{article.title}</Title>
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   {article?.description || "暂无描述"}
                 </Text>
@@ -268,9 +272,12 @@ export default function ContentDetailPage() {
             <Space orientation={"vertical"} size={24} style={{ width: "100%" }}>
               <Card
                 title={
-                  <Text strong style={{ color: "#475569" }}>
-                    文章状态
-                  </Text>
+                  <Space size={6}>
+                    <LoadingOutlined style={{ color: "#818cf8" }} />
+                    <Text strong style={{ color: "#475569" }}>
+                      文章状态
+                    </Text>
+                  </Space>
                 }
                 styles={{ body: { padding: "20px" } }}
                 style={{
@@ -301,9 +308,12 @@ export default function ContentDetailPage() {
 
               <Card
                 title={
-                  <Text strong style={{ color: "#475569" }}>
-                    数据统计
-                  </Text>
+                  <Space size={6}>
+                    <HeartOutlined style={{ color: "#818cf8" }} />
+                    <Text strong style={{ color: "#475569" }}>
+                      数据统计
+                    </Text>
+                  </Space>
                 }
                 style={{
                   borderRadius: 16,
@@ -352,9 +362,12 @@ export default function ContentDetailPage() {
 
               <Card
                 title={
-                  <Text strong style={{ color: "#475569" }}>
-                    作者信息
-                  </Text>
+                  <Space size={6}>
+                    <UserSwitchOutlined style={{ color: "#818cf8" }} />
+                    <Text strong style={{ color: "#475569" }}>
+                      作者信息
+                    </Text>
+                  </Space>
                 }
                 style={{
                   borderRadius: 16,
@@ -392,9 +405,12 @@ export default function ContentDetailPage() {
 
               <Card
                 title={
-                  <Text strong style={{ color: "#475569" }}>
-                    系统参数
-                  </Text>
+                  <Space size={6}>
+                    <ConsoleSqlOutlined style={{ color: "#818cf8" }} />
+                    <Text strong style={{ color: "#475569" }}>
+                      系统参数
+                    </Text>
+                  </Space>
                 }
                 size="small"
                 style={{
@@ -514,6 +530,49 @@ export default function ContentDetailPage() {
         onClose={onClose}
         onSuccessCallback={onSuccessCallback}
       />
+
+      <style jsx global>{`
+        .article-content table {
+          border-collapse: collapse;
+          table-layout: fixed;
+          width: 100%;
+          margin: 1.5rem 0;
+          overflow: hidden;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0; /* 外边框 */
+        }
+
+        .article-content td,
+        .article-content th {
+          min-width: 1em;
+          border: 1px solid #e2e8f0; /* 单元格边框 */
+          padding: 10px 12px;
+          vertical-align: top;
+          box-sizing: border-box;
+        }
+
+        .article-content th {
+          font-weight: bold;
+          text-align: left;
+          background-color: #f8fafc; /* 表头背景色 */
+        }
+
+        .article-content pre {
+          background: #1e293b;
+          color: #f8fafc;
+          padding: 1rem;
+          border-radius: 8px;
+          margin: 1.5rem 0;
+          overflow-x: auto;
+        }
+
+        .article-content blockquote {
+          border-left: 4px solid #818cf8;
+          background: #f8fafc;
+          padding: 1rem;
+          margin: 1.5rem 0;
+        }
+      `}</style>
     </div>
   );
 }
