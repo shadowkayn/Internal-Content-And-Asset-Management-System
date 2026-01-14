@@ -1,15 +1,15 @@
 /* 默认封面样式 */
 .default-cover {
-  width: 100%;
+  width: 80px;
   aspect-ratio: 16 / 9;
   background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  color: #94a3b8;
+  border-radius: 4px;
+  color: #000;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-style: italic;
   overflow: hidden;
   position: relative;
 
@@ -17,9 +17,9 @@
   &::after {
     content: 'ARTICLE';
     position: absolute;
-    bottom: -10px;
-    right: -5px;
-    font-size: 4rem;
+    bottom: -6%;
+    right: 3%;
+    font-size: 16px;
     opacity: 0.1;
     font-style: italic;
   }

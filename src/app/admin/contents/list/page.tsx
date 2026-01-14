@@ -159,9 +159,16 @@ export default function ContentListPage() {
       align: "center",
       render: (src: string) => {
         return src ? (
-          <Image src={src} width={60} style={{ borderRadius: 4 }} alt="" />
+          <Image
+            src={src}
+            width={80}
+            style={{ borderRadius: 4, objectFit: "cover", aspectRatio: 16 / 9 }}
+            alt=""
+          />
         ) : (
-          <DefaultCover />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <DefaultCover />
+          </div>
         );
       },
     },
