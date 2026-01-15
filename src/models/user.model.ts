@@ -38,7 +38,7 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "editor", "viewer"],
+      required: true,
       default: "viewer",
     },
     permissions: {

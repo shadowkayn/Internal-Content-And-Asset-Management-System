@@ -37,7 +37,6 @@ export const createContentAction = withAuthContext(async (data: any) => {
 export const updateContentAction = withAuthContext(async (data: any) => {
   // 使用 zod 校验参数
   const validatedFields = editContentSchema.safeParse(data);
-  console.log(validatedFields, "validatedFields");
 
   if (!validatedFields.success) {
     return { error: validatedFields.error.issues[0].message };

@@ -70,6 +70,11 @@ export const MenuConfig = [
         label: "字典管理",
         permission: Permissions.SYSTEM_MANAGE,
       },
+      {
+        key: "/admin/system/permission",
+        label: "权限管理",
+        permission: Permissions.SYSTEM_MANAGE,
+      },
     ],
   },
 ];
