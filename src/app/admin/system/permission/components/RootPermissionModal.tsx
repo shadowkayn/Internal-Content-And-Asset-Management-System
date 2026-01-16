@@ -43,7 +43,8 @@ const RootPermissionModal = ({
 
     try {
       setLoading(true);
-      const { type, name, code, icon, sort, parentId } = form.getFieldsValue();
+      const { type, name, code, icon, sort, parentId, path } =
+        form.getFieldsValue();
       let res: any = null;
       const params = {
         type,
@@ -52,6 +53,7 @@ const RootPermissionModal = ({
         icon,
         sort,
         parentId,
+        path,
       };
       const isEditMode = !!editingItem;
       if (isEditMode) {
@@ -90,6 +92,14 @@ const RootPermissionModal = ({
         </Form.Item>
 
         <Form.Item
+          name="code"
+          label="权限标识 (Code)"
+          rules={[{ required: true, message: "权限标识不能为空" }]}
+        >
+          <Input placeholder="例如: content:edit" />
+        </Form.Item>
+
+        <Form.Item
           name="name"
           label="菜单名称"
           rules={[{ required: true, message: "菜单名称不能为空" }]}
@@ -98,7 +108,7 @@ const RootPermissionModal = ({
         </Form.Item>
 
         <Form.Item
-          name="code"
+          name="path"
           label="菜单路径"
           rules={[
             { required: true, message: "菜单路径不能为空" },

@@ -86,6 +86,8 @@ export class PermissionService {
         type: item.type,
         icon: item.icon,
         sort: item.type === "menu" ? item.sort : null,
+        path: item.type === "menu" ? item.path : null,
+        parentPath: item.parentPath,
         parentId: item.parentId,
         createdAt: item.createdAt?.toLocaleString("zh-CN"),
         updatedAt: item.updatedAt?.toLocaleString("zh-CN"),

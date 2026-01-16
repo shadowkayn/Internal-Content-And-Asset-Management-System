@@ -33,7 +33,6 @@ export const addPermissionAction = async (data: any) => {
   if (!validatedFields.success) {
     return { error: validatedFields.error.issues[0].message };
   }
-  console.log(data, "data");
 
   try {
     await PermissionService.addPermission(data);

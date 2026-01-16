@@ -15,6 +15,7 @@ interface Props {
   isModalOpen: boolean;
   editingItem: PermissionNode | null;
   parentId: string | null;
+  parentPath: string | null;
   onClose: () => void;
   onSuccessCallback: () => void;
 }
@@ -24,6 +25,7 @@ const PermissionModal = ({
   editingItem,
   onClose,
   parentId,
+  parentPath,
   onSuccessCallback,
 }: Props) => {
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ const PermissionModal = ({
         form.setFieldsValue(null);
       }
       if (parentId) {
-        form.setFieldsValue({ parentId: parentId });
+        form.setFieldsValue({ parentId: parentId, parentPath: parentPath });
       }
     }
   }, [isModalOpen]);
@@ -48,7 +50,8 @@ const PermissionModal = ({
 
     try {
       setLoading(true);
-      const { type, name, code, icon, sort, parentId } = form.getFieldsValue();
+      const { type, name, code, icon, sort, parentId, parentPath, path } =
+        form.getFieldsValue();
       let result: any = null;
       const params = {
         type,
@@ -57,10 +60,11 @@ const PermissionModal = ({
         icon,
         sort,
         parentId,
+        parentPath,
+        path,
       };
       const isEditMode = !!editingItem;
       if (isEditMode) {
-        console.log("deitasdasdasdas", editingItem);
         result = await updatePermissionAction({
           ...params,
           id: editingItem?.id,
@@ -119,12 +123,35 @@ const PermissionModal = ({
           <Input placeholder="例如: 编辑文章" />
         </Form.Item>
 
+        <Form.Item
+          name="code"
+          label="权限标识 (Code)"
+          rules={[{ required: true, message: "权限标识不能为空" }]}
+        >
+          <Input placeholder="例如: content:edit" />
+        </Form.Item>
+
         <Form.Item noStyle dependencies={["type"]}>
           {({ getFieldValue }) => {
             const type = getFieldValue("type");
             return type === "menu" ? (
               <Form.Item
-                name="code"
+                name="parentPath"
+                label="上级菜单路径"
+                rules={[{ required: true, message: "上级菜单路径不能为空" }]}
+              >
+                <Input placeholder="上级路径无需填写" disabled />
+              </Form.Item>
+            ) : null;
+          }}
+        </Form.Item>
+
+        <Form.Item noStyle dependencies={["type"]}>
+          {({ getFieldValue }) => {
+            const type = getFieldValue("type");
+            return type === "menu" ? (
+              <Form.Item
+                name="path"
                 label="菜单路径"
                 rules={[
                   { required: true, message: "菜单路径不能为空" },
@@ -153,15 +180,7 @@ const PermissionModal = ({
               >
                 <Input placeholder="例如: /admin/contents/list" />
               </Form.Item>
-            ) : (
-              <Form.Item
-                name="code"
-                label="权限标识 (Code)"
-                rules={[{ required: true, message: "权限标识不能为空" }]}
-              >
-                <Input placeholder="例如: content:edit" />
-              </Form.Item>
-            );
+            ) : null;
           }}
         </Form.Item>
 

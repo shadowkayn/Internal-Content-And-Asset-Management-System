@@ -34,6 +34,7 @@ export default function PermissionManagePage() {
   const [isRootModalOpen, setIsRootModalOpen] = useState(false);
   const [editingRootItem, setEditingRootItem] = useState<any>(null);
   const [parentId, setParentId] = useState(null);
+  const [parentPath, setParentPath] = useState(null);
 
   const getPermissionTreeAction = async () => {
     try {
@@ -41,7 +42,6 @@ export default function PermissionManagePage() {
       const res: any = await getPermissionListAction();
       if (res.success) {
         setPermissionTreeData(res.data?.list || []);
-        console.log(res.data?.list, "permissionTreeData");
       } else {
         message.error(res.message || "获取权限🌲失败");
       }
@@ -88,6 +88,7 @@ export default function PermissionManagePage() {
 
   const onAddChildItem = (row: any) => {
     setParentId(row.code);
+    setParentPath(row.path);
     setIsModalOpen(true);
   };
 
@@ -106,6 +107,7 @@ export default function PermissionManagePage() {
     setIsModalOpen(false);
     setEditingItem(null);
     setParentId(null);
+    setParentPath(null);
   };
 
   const onSuccessCallback = () => {
@@ -222,6 +224,7 @@ export default function PermissionManagePage() {
         isModalOpen={isModalOpen}
         editingItem={editingItem}
         parentId={parentId}
+        parentPath={parentPath}
         onClose={onCloseModal}
         onSuccessCallback={onSuccessCallback}
       />

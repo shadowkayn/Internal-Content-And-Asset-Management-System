@@ -113,8 +113,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           height: 64,
           background:
             "linear-gradient(90deg, rgba(238, 242, 255, 0.5) 0%, rgba(255, 241, 242, 0.5) 50%, rgba(240, 253, 244, 0.5) 100%)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           padding: "0 24px 0 0",
           display: "flex",
           justifyContent: "space-between",

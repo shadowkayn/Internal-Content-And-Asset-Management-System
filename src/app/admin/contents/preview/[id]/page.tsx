@@ -105,7 +105,6 @@ export default function ContentDetailPage() {
           statusColor: statusConfig?.[status]?.color,
         };
         setArticle(result);
-        console.log("mockArticle", res.data);
       }
     } catch (error: any) {
       message.error(error.message || "获取详情失败");

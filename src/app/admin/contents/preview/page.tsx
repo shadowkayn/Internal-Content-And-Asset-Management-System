@@ -96,7 +96,6 @@ export default function ContentsPreviewPage() {
           };
         });
         setDataSource(result);
-        console.log("result", result);
         setPagination((prev) => ({
           ...prev,
           total: res.data.total || 0,

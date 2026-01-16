@@ -130,7 +130,6 @@ export default function UserListPage() {
   };
 
   const editUserFunc = (row: UserItem) => {
-    console.log("row", row);
     setIsModalOpen(true);
     setIsEditMode(true);
     setInitialData(row);
