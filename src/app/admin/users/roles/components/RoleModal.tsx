@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Col,
   Divider,
@@ -13,6 +13,8 @@ import {
   Tree,
   Typography,
 } from "antd";
+import { getPermissionListAction } from "@/actions/permission.action";
+import { createRoleAction, editRoleAction } from "@/actions/role.action";
 
 interface Props {
   isModalOpen: boolean;
@@ -30,48 +32,91 @@ const RoleModal = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
+  const [permissionTree, setPermissionTree] = useState<any[]>([]);
 
-  // 定义系统所有的权限树（这部分通常可以放在 constants 中）
-  const permissionData = [
-    {
-      title: "仪表盘",
-      key: "dashboard",
-      children: [{ title: "查看数据", key: "dashboard:view" }],
-    },
-    {
-      title: "内容管理",
-      key: "content",
-      children: [
-        { title: "内容列表", key: "content:list" },
-        { title: "内容预览", key: "content:preview" },
-        { title: "内容新增", key: "content:add" },
-        { title: "内容编辑", key: "content:edit" },
-        { title: "内容删除", key: "content:delete" },
-      ],
-    },
-    {
-      title: "用户管理",
-      key: "user",
-      children: [
-        { title: "用户列表", key: "user:list" },
-        { title: "用户编辑", key: "user:edit" },
-        { title: "角色管理", key: "user:role" },
-      ],
-    },
-    {
-      title: "系统管理",
-      key: "system",
-      children: [
-        { title: "字典管理", key: "system:dict" },
-        { title: "系统日志", key: "system:log" },
-      ],
-    },
-  ];
+  useEffect(() => {
+    if (isModalOpen) {
+      getPermissionTreeData().then();
+      form.resetFields();
+      setCheckedKeys([]);
 
-  const onSubmit = () => {
-    setLoading(true);
-    onSuccessCallback();
-    setLoading(false);
+      if (editingRole) {
+        form.setFieldsValue({
+          ...editingRole,
+          status: editingRole.status === "active",
+        });
+        setCheckedKeys(editingRole?.permissions || []);
+      } else {
+        form.setFieldsValue(null);
+      }
+    }
+  }, [isModalOpen]);
+
+  const getPermissionTreeData = async () => {
+    try {
+      setLoading(true);
+      const res: any = await getPermissionListAction();
+      if (res.success) {
+        const treeData = convertPermissionData(res.data?.list || []);
+        setPermissionTree(treeData);
+      } else {
+        message.error(res.message || "获取权限树失败");
+      }
+    } catch (e: any) {
+      message.error(e.message || "获取权限树失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 转换权限数据为 Tree 组件所需格式
+  const convertPermissionData: any = (permissions: any[]) => {
+    return permissions.map((permission) => ({
+      title: permission.name,
+      key: permission.code,
+      children: permission.children
+        ? convertPermissionData(permission.children)
+        : [],
+    }));
+  };
+
+  const onSubmit = async () => {
+    await form.validateFields();
+
+    const isEditMode = !!editingRole;
+    const action = isEditMode ? "更新" : "新增";
+    try {
+      setLoading(true);
+      const { name, code, status, description } = form.getFieldsValue();
+      const params = {
+        name,
+        code,
+        status: status ? "active" : "disabled",
+        description,
+        permissions: checkedKeys,
+      };
+
+      let res: any = null;
+      if (isEditMode) {
+        res = await editRoleAction({
+          ...params,
+          id: editingRole?.id,
+        });
+      } else {
+        res = await createRoleAction(params);
+      }
+
+      if (res.success) {
+        message.success(`${action}成功`);
+        onSuccessCallback();
+      } else {
+        message.error(res.error || `${action}失败`);
+      }
+    } catch (e: any) {
+      message.error(e.message || `${action}失败`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -121,11 +166,12 @@ const RoleModal = ({
               name="status"
               valuePropName="checked"
               rules={[{ required: true }]}
+              initialValue={true}
             >
-              <Switch checkedChildren="正常" unCheckedChildren="禁用" />
+              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
             </Form.Item>
             <Form.Item
-              name="desc"
+              name="description"
               label="角色描述"
               rules={[{ required: true, message: "角色描述不能为空" }]}
             >
@@ -147,7 +193,7 @@ const RoleModal = ({
                 background: "#f8fafc",
                 padding: "12px",
                 borderRadius: "12px",
-                maxHeight: "600px",
+                maxHeight: "500px",
                 overflowY: "auto",
                 border: "1px solid #f1f5f9",
               }}
@@ -157,7 +203,7 @@ const RoleModal = ({
                 defaultExpandAll
                 onCheck={(keys) => setCheckedKeys(keys as string[])}
                 checkedKeys={checkedKeys}
-                treeData={permissionData}
+                treeData={permissionTree}
               />
             </div>
 

@@ -6,6 +6,7 @@ export interface RoleDocument extends Document {
   description: string;
   permissions: string[];
   status: "active" | "disabled";
+  deleteFlag: number;
 }
 
 const RoleSchema = new Schema<RoleDocument>(
@@ -15,6 +16,7 @@ const RoleSchema = new Schema<RoleDocument>(
     description: { type: String, required: true },
     permissions: [{ type: String, default: [] }],
     status: { type: String, enum: ["active", "disabled"], default: "active" },
+    deleteFlag: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

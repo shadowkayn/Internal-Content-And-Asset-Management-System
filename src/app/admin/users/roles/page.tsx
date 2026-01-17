@@ -5,13 +5,16 @@ import {
   Card,
   Form,
   Input,
+  message,
+  Popconfirm,
+  Select,
   Space,
   Switch,
   Table,
   Tag,
   Typography,
 } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -21,53 +24,114 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import RoleModal from "./components/RoleModal";
+import {
+  deleteRoleAction,
+  getRoleListAction,
+  updateRoleStatusAction,
+} from "@/actions/role.action";
 
 export default function UserRolePage() {
   const [form] = Form.useForm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
-  const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [rolesData, setRolesData] = useState([
-    {
-      id: "1",
-      name: "超级管理员",
-      code: "admin",
-      desc: "拥有系统所有权限",
-      status: "active",
-      permissions: ["dashboard", "content", "user", "system"],
-      createdAt: "2023-10-01",
-    },
-    {
-      id: "2",
-      name: "内容编辑",
-      code: "editor",
-      desc: "负责内容发布与维护",
-      status: "active",
-      permissions: ["content:list", "content:edit"],
-      createdAt: "2023-11-15",
-    },
-    {
-      id: "3",
-      name: "普通访客",
-      code: "viewer",
-      desc: "仅拥有查看权限",
-      status: "active",
-      permissions: ["content:list", "content:preview"],
-      createdAt: "2023-12-20",
-    },
-  ]);
+  const [dataSource, setDataSource] = useState([]);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
-  const showModal = (role?: any) => {
-    setEditingRole(role || null);
-    if (role) {
-      form.setFieldsValue(role);
-      setCheckedKeys(role.permissions || null);
-    } else {
-      form.resetFields();
-      setCheckedKeys([]);
+  useEffect(() => {
+    loadData().then();
+  }, []);
+
+  const loadData = async (
+    page = pagination.current,
+    pageSize = pagination.pageSize,
+  ) => {
+    const params = {
+      page,
+      pageSize,
+      keywords: form.getFieldValue("keywords"),
+      status: form.getFieldValue("status"),
+    };
+
+    try {
+      setTableLoading(true);
+      const res: any = await getRoleListAction(params);
+      if (res.success) {
+        setDataSource(res.data?.list || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: res.data?.total || 0,
+        }));
+      } else {
+        message.error(res.error || "获取角色列表失败");
+      }
+    } catch (e: any) {
+      message.error(e.error || "获取角色列表失败");
+    } finally {
+      setTableLoading(false);
     }
+  };
+
+  const onReset = async () => {
+    form.resetFields();
+    await loadData(1);
+  };
+
+  const addRoleFunc = () => {
     setIsModalOpen(true);
+    setEditingRole(null);
+  };
+
+  const onEditRoleFunc = (row: any) => {
+    setIsModalOpen(true);
+    setEditingRole(row);
+  };
+
+  const onSuccessCallback = async () => {
+    setIsModalOpen(false);
+    await loadData(1);
+  };
+
+  const onChangeStatus = async (checked: boolean, record: any) => {
+    const params = {
+      id: record?.id,
+      status: checked ? "active" : "disabled",
+    };
+    try {
+      setTableLoading(true);
+      const res = await updateRoleStatusAction(params);
+      if (res.success) {
+        message.info(`角色状态已: ${checked ? "启用" : "禁用"}`);
+        await loadData();
+      } else {
+        message.error(res.error || "操作失败");
+      }
+    } catch (e) {
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const ids = [id];
+    try {
+      setTableLoading(true);
+      const res = await deleteRoleAction(ids);
+      if (res.success) {
+        message.info("删除成功");
+        await loadData(1);
+      } else {
+        message.error(res.error || "操作失败");
+      }
+    } catch (e: any) {
+      message.error(e.message || "操作失败");
+    } finally {
+      setTableLoading(false);
+    }
   };
 
   const columns: any = [
@@ -89,8 +153,8 @@ export default function UserRolePage() {
     },
     {
       title: "描述",
-      dataIndex: "desc",
-      key: "desc",
+      dataIndex: "description",
+      key: "description",
       align: "center",
       ellipsis: true,
     },
@@ -99,8 +163,13 @@ export default function UserRolePage() {
       dataIndex: "status",
       key: "status",
       align: "center",
-      render: (status: string) => (
-        <Switch checked={status === "active"} size="default" />
+      render: (val: string, row: any) => (
+        <Switch
+          checkedChildren="启用"
+          unCheckedChildren="禁用"
+          checked={val === "active"}
+          onChange={(checked) => onChangeStatus(checked, row)}
+        />
       ),
     },
     {
@@ -118,13 +187,22 @@ export default function UserRolePage() {
           <Button
             type="link"
             icon={<EditOutlined />}
-            onClick={() => showModal(record)}
+            onClick={() => onEditRoleFunc(record)}
           >
             编辑
           </Button>
-          <Button type="link" danger icon={<DeleteOutlined />}>
-            删除
-          </Button>
+          <Popconfirm
+            placement={"topLeft"}
+            title="确定要删除该角色吗？"
+            description="删除后该角色绑定的相关人员将失效，请谨慎操作。"
+            onConfirm={() => handleDelete(record.id!)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="link" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -134,14 +212,33 @@ export default function UserRolePage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/*搜索区域*/}
       <Card variant="borderless" style={{ borderRadius: 16 }}>
-        <Form layout="inline">
-          <Form.Item label="角色名称">
-            <Input placeholder="请输入" />
+        <Form layout="inline" form={form}>
+          <Form.Item label="关键字" name="keywords">
+            <Input
+              placeholder="请输入角色名称或角色标识"
+              style={{ width: 240 }}
+            />
           </Form.Item>
-          <Button type="primary" icon={<SearchOutlined />}>
+
+          <Form.Item label="角色状态" name="status">
+            <Select placeholder="请选择角色状态" style={{ width: 140 }}>
+              <Select.Option value="active">启用</Select.Option>
+              <Select.Option value="disabled">禁用</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Button
+            type="primary"
+            icon={<SearchOutlined />}
+            onClick={() => loadData()}
+          >
             查询
           </Button>
-          <Button icon={<ReloadOutlined />} style={{ marginLeft: 8 }}>
+          <Button
+            icon={<ReloadOutlined />}
+            style={{ marginLeft: 8 }}
+            onClick={onReset}
+          >
             重置
           </Button>
         </Form>
@@ -160,7 +257,7 @@ export default function UserRolePage() {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => showModal()}
+            onClick={() => addRoleFunc()}
           >
             新增角色
           </Button>
@@ -168,9 +265,24 @@ export default function UserRolePage() {
       >
         <Table
           columns={columns}
-          dataSource={rolesData}
+          dataSource={dataSource}
           rowKey="id"
-          pagination={{ pageSize: 5 }}
+          loading={tableLoading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showQuickJumper: true,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条记录`,
+            onChange: (page, pageSize) => {
+              setPagination((prev) => ({
+                ...prev,
+                current: page,
+                pageSize: pageSize || prev.pageSize,
+              }));
+            },
+          }}
         />
       </Card>
 
@@ -178,18 +290,7 @@ export default function UserRolePage() {
         isModalOpen={isModalOpen}
         editingRole={editingRole}
         onClose={() => setIsModalOpen(false)}
-        onSuccessCallback={() => {
-          setIsModalOpen(false);
-          setRolesData((prevData: any) => {
-            if (editingRole) {
-              return prevData.map((role: any) =>
-                role.id === editingRole.id ? editingRole : role,
-              );
-            } else {
-              return [...prevData, editingRole];
-            }
-          });
-        }}
+        onSuccessCallback={onSuccessCallback}
       />
     </div>
   );
