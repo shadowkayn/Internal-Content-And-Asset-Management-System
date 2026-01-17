@@ -1,4 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
+import { getPermissionListAction } from "@/actions/permission.action";
+import { useState } from "react";
 
 export const Permissions = {
   CONTENT_CREATE: "content:create",
@@ -9,10 +11,10 @@ export const Permissions = {
   SYSTEM_MANAGE: "system:manage",
 } as const;
 
-export async function hasPermission(permission: string) {
-  const user = await getCurrentUser();
-
-  if (!user) return false;
-
-  return user.permissions.includes(permission);
-}
+// export async function hasPermission(permission: string) {
+//   const user = await getCurrentUser();
+//
+//   if (!user) return false;
+//
+//   return user.permissions.includes(permission);
+// }

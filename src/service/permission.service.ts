@@ -57,10 +57,13 @@ export class PermissionService {
     );
   }
 
-  static async getPermissionList() {
+  static async getPermissionList(type?: "menu" | "") {
     await connectDB();
 
-    const query = { deleteFlag: 0 };
+    const query: any = { deleteFlag: 0 };
+    if (type) {
+      query.type = type; // 根据 type 过滤
+    }
 
     const rawList = await PermissionModel.find(query).sort({ sort: 1 }).lean();
     // 排序逻辑：先按类型(menu在前)，再按 sort(升序)
@@ -124,5 +127,13 @@ export class PermissionService {
     removeEmptyChildren(tree);
 
     return { list: tree };
+  }
+
+  static async getButtonPermissionList() {
+    await connectDB();
+
+    const query: any = { deleteFlag: 0, type: "button" };
+    const ButtonList = await PermissionModel.find(query).lean();
+    return { list: ButtonList };
   }
 }

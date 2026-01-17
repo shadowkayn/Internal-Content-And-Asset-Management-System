@@ -6,7 +6,7 @@ export interface IUser extends Document {
   password: string;
   role: string;
   roleName: string;
-  permissions: [string];
+  permissions: Array<string> | null;
   status: "active" | "disabled";
   email: string;
   avatar: string;
@@ -46,7 +46,7 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
     },
     permissions: {
-      type: [String],
+      type: Array,
       default: [],
     },
     status: {

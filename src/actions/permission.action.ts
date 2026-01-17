@@ -71,11 +71,20 @@ export const deletePermissionAction = async (ids: string[]) => {
   }
 };
 
-export const getPermissionListAction = async () => {
+export const getPermissionListAction = async (type: "menu" | "" = "") => {
   try {
-    const result = await PermissionService.getPermissionList();
+    const result = await PermissionService.getPermissionList(type);
     return { success: true, data: result };
   } catch (e: any) {
     return { error: e.message || "获取权限列表失败" };
+  }
+};
+
+export const getPermissionButtonAction = async () => {
+  try {
+    const result = await PermissionService.getButtonPermissionList();
+    return { success: true, data: result };
+  } catch (e: any) {
+    return { error: e.message || "获取按钮权限失败" };
   }
 };

@@ -7,7 +7,8 @@ import { verifyToken } from "@/lib/token";
 
 export interface JWTPayload {
   userId: string;
-  role: "admin" | "editor" | "viewer";
+  role?: string;
+  permissions?: string[];
 }
 
 // 从请求上下文里 → 解析 token → 查数据库 → 返回用户

@@ -30,9 +30,21 @@ export async function middleware(request: NextRequest) {
     return backLogin();
   }
 
-  // 角色权限控制（基础版）
-  if (pathName.startsWith("/admin/system") && payload?.role !== "admin") {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+  // 超管放行
+  if (payload.role === "admin") return NextResponse.next();
+
+  // 动态路径拦截
+  const allowedPaths = payload.allowedPaths || [];
+  // 校验逻辑：当前访问的路径，是否在允许列表中
+  // 使用 .some + .startsWith 兼容动态路由 (如 /preview/123)
+  const isAllowed = allowedPaths.some((path: string) =>
+    pathName.startsWith(path),
+  );
+
+  // 如果不匹配，重定向到 403 或 dashboard
+  if (!isAllowed) {
+    console.warn(`权限不足，拒绝访问: ${pathName}`);
+    return NextResponse.redirect(new URL("/403", request.url));
   }
 
   return NextResponse.next();
@@ -40,10 +52,6 @@ export async function middleware(request: NextRequest) {
 
 // 配置 matcher
 export const config = {
-  // 匹配 /dashboard 、/system 、 /content 下的所有子路径
-  matcher: [
-    "/admin/dashboard/:path*",
-    "/admin/system/:path*",
-    "/admin/content/:path*",
-  ],
+  // 匹配所有 /admin 下子路径
+  matcher: ["/admin/:path*"],
 };

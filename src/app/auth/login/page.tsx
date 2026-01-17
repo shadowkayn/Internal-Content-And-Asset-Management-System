@@ -19,7 +19,7 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import {
-  login,
+  loginAction,
   register,
   sendEmailVerificationCode,
 } from "@/actions/auth.actions";
@@ -88,20 +88,20 @@ export default function AuthPage() {
 
     setBtnLoading(true);
 
-    login(formData)
+    loginAction(formData)
       .then((res) => {
         if (res.success) {
           message.success("登录成功");
           loginForm.resetFields();
           window.location.href = "/admin/dashboard";
         } else {
-          message.error(res.error);
+          message.error(res.error || "登录失败");
           // 自动刷新验证码
           refreshCaptcha();
         }
       })
       .catch((err) => {
-        message.error(err.message);
+        message.error(err?.message || "登录失败");
         refreshCaptcha();
       })
       .finally(() => {

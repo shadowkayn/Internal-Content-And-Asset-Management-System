@@ -17,17 +17,25 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { SidebarMenu } from "@/components/SidebarMenu";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { logout } from "@/actions/auth.actions";
 import { usePathname, useRouter } from "next/dist/client/components/navigation";
 import { MenuConfig } from "@/constants/menu";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const { Header, Content, Footer, Sider } = Layout;
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
+export function AdminLayout({
+  initialMenu,
+  children,
+}: {
+  children: React.ReactNode;
+  initialMenu: any;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const userInfo = useCurrentUser();
 
   // 用户下拉菜单
   const userMenuItems: MenuProps["items"] = [
@@ -158,10 +166,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           >
             <Space style={{ cursor: "pointer" }}>
               <Avatar
+                src={userInfo?.avatar || null}
                 icon={<UserOutlined />}
                 style={{ backgroundColor: "#1890ff" }}
               />
-              <span style={{ fontWeight: 500 }}>管理员</span>
+              <span style={{ fontWeight: 500 }}>{userInfo?.roleName}</span>
             </Space>
           </Dropdown>
         </Space>
@@ -185,7 +194,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             zIndex: 10,
           }}
         >
-          <SidebarMenu />
+          <SidebarMenu menuData={initialMenu} />
         </Sider>
 
         <Layout style={{ background: "transparent" }}>
