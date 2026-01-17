@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Form,
-  Input,
-  message,
-  Modal,
-  Select,
-  Switch,
-  Upload,
-  UploadProps,
-} from "antd";
+import { Form, Input, message, Modal, Switch, Upload, UploadProps } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import { addUserAction, updateUserAction } from "@/actions/user.actions";
+import CommonSelect from "@/components/common/CommonSelect";
+import { getRoleListAction } from "@/actions/role.action";
 
 interface UserModalProps {
   open: boolean;
@@ -49,6 +42,7 @@ export default function UserModal({
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>();
+  const [roleList, setRoleList] = useState<any>([]);
 
   const phoneRegex =
     /^(\+?86[-\s]?)?1[3-9]\d{9}$|^(\+?86[-\s]?)?0\d{2,3}[-\s]?\d{7,8}$|^\+[\d\s\-\(\)]{8,15}$/;
@@ -64,8 +58,27 @@ export default function UserModal({
       } else {
         form.setFieldsValue({ status: true });
       }
+      getUserRolesList().then();
     }
-  }, [open, isEditMode, initialData, form]);
+  }, [open]);
+
+  const getUserRolesList = async () => {
+    const params = { options: "all" };
+    try {
+      const res = await getRoleListAction(params);
+      if (res.success) {
+        setRoleList(res.data?.list || []);
+      } else {
+        message.error(res.error || "获取角色列表失败");
+      }
+    } catch (e: any) {
+      message.error(e.error || "获取角色列表失败");
+    }
+  };
+
+  const getRoleInfo = (roleCode: string) => {
+    return roleList?.find((item: any) => item.code === roleCode) || {};
+  };
 
   // submit
   const handleOk = async () => {
@@ -76,6 +89,8 @@ export default function UserModal({
         ...values,
         id: initialData?.id,
         status: values.status ? "active" : "disabled",
+        permissions: getRoleInfo(values.role)?.permissions || [],
+        roleName: getRoleInfo(values.role)?.name || "",
       };
       let res;
       if (isEditMode) {
@@ -188,14 +203,14 @@ export default function UserModal({
           label="角色"
           rules={[{ required: true, message: "请选择用户角色!" }]}
         >
-          <Select placeholder="请选择角色">
-            <Select.Option value="admin">管理员</Select.Option>
-            <Select.Option value="editor">编辑员</Select.Option>
-            <Select.Option value="viewer">普通用户</Select.Option>
-          </Select>
+          <CommonSelect
+            placeholder="请选择角色"
+            selectOptions={roleList}
+            fieldNames={{ label: "name", value: "code" }}
+          />
         </Form.Item>
         <Form.Item label="状态" name="status" valuePropName="checked">
-          <Switch checkedChildren="正常" unCheckedChildren="禁用" />
+          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
         </Form.Item>
         <Form.Item label="头像" name="avatar">
           <Upload

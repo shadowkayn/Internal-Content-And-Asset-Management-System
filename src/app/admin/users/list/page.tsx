@@ -170,13 +170,9 @@ export default function UserListPage() {
     {
       title: "角色",
       align: "center",
-      dataIndex: "role",
-      key: "role",
-      render: (role) => (
-        <Tag color={role === "admin" ? "pro" : "blue"}>
-          {role?.toUpperCase()}
-        </Tag>
-      ),
+      dataIndex: "roleName",
+      key: "roleName",
+      render: (role) => <Tag color={"pink"}>{role?.toUpperCase()}</Tag>,
     },
     {
       title: "Email",
@@ -196,7 +192,7 @@ export default function UserListPage() {
       key: "status",
       render: (status) => (
         <Tag color={status === "active" ? "green" : "red"}>
-          {status === "active" ? "正常" : "禁用"}
+          {status === "active" ? "启用" : "禁用"}
         </Tag>
       ),
     },
@@ -262,7 +258,7 @@ export default function UserListPage() {
               style={{ width: 120 }}
               allowClear
               options={[
-                { value: "active", label: "正常" },
+                { value: "active", label: "启用" },
                 { value: "disabled", label: "禁用" },
               ]}
               onChange={(val) =>

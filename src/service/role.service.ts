@@ -63,7 +63,7 @@ export class RoleService {
   static async getRoleList(params: any) {
     await connectDB();
 
-    const { page, pageSize, status, keywords } = params;
+    const { page, pageSize, status, keywords, options } = params;
 
     const query: any = { deleteFlag: 0 };
     if (status) {
@@ -75,12 +75,13 @@ export class RoleService {
         { code: { $regex: keywords, $options: "i" } }, // 匹配角色标识
       ];
     }
-    const skip = (page - 1) * pageSize;
 
-    const [list, total] = await Promise.all([
-      RoleModel.find(query)
-        .skip(skip)
-        .limit(pageSize)
+    let list = [],
+      total = 0;
+
+    if (options === "all") {
+      // 全量查询
+      list = await RoleModel.find(query)
         .sort({ createdAt: -1 })
         .lean()
         .transform((doc) => {
@@ -91,9 +92,29 @@ export class RoleService {
             createdAt: item.createdAt?.toLocaleString("zh-CN"),
             updatedAt: item.updatedAt?.toLocaleString("zh-CN"),
           }));
-        }),
-      RoleModel.countDocuments(query),
-    ]);
+        });
+      total = list.length;
+    } else {
+      const skip = (page - 1) * pageSize;
+
+      [list, total] = await Promise.all([
+        RoleModel.find(query)
+          .skip(skip)
+          .limit(pageSize)
+          .sort({ createdAt: -1 })
+          .lean()
+          .transform((doc) => {
+            return doc.map((item: any) => ({
+              ...item,
+              id: item._id.toString(),
+              _id: undefined,
+              createdAt: item.createdAt?.toLocaleString("zh-CN"),
+              updatedAt: item.updatedAt?.toLocaleString("zh-CN"),
+            }));
+          }),
+        RoleModel.countDocuments(query),
+      ]);
+    }
 
     return { list, total };
   }
