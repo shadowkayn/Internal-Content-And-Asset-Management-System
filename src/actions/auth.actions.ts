@@ -86,6 +86,10 @@ export async function loginAction(formData: FormData) {
       return { error: "用户被禁用" };
     }
 
+    if (user.roleStatus !== "active") {
+      return { error: "用户绑定角色被禁用" };
+    }
+
     const isValid = await comparePassword(password, user.password);
 
     if (!isValid) {

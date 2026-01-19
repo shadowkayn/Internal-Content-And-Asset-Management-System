@@ -91,6 +91,7 @@ export default function UserModal({
         status: values.status ? "active" : "disabled",
         permissions: getRoleInfo(values.role)?.permissions || [],
         roleName: getRoleInfo(values.role)?.name || "",
+        roleStatus: getRoleInfo(values.role)?.status || "",
       };
       let res;
       if (isEditMode) {
