@@ -12,6 +12,7 @@ import {
   Avatar,
   Button,
   message,
+  Skeleton,
 } from "antd";
 import {
   FileTextOutlined,
@@ -46,15 +47,16 @@ export default function DashboardPage() {
   const [statistics, setStatistics] = useState<any>({});
   const [articles, setArticles] = useState<any>([]);
   const [articlesTypes, setArticlesTypes] = useState<any>([]);
+  const [loading, setLoading] = useState(false);
 
   const getStatistics = useCallback(async () => {
     try {
+      setLoading(true);
       const [res1, res2, res3] = await Promise.allSettled([
         getStatisticsAction(),
         getArticlesOfSevenDaysAction(),
         getArticlesTypesAction(),
       ]);
-      console.log("res", res1, res2, res3);
       if (res1.status === "fulfilled" && res1.value.success) {
         setStatistics(res1.value.data);
       }
@@ -66,6 +68,8 @@ export default function DashboardPage() {
       }
     } catch (e: any) {
       message.error(e.message || "查询失败");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -164,7 +168,6 @@ export default function DashboardPage() {
     };
   }, [articlesTypes]);
 
-  // --- 样式常量 ---
   const cardStyle = {
     borderRadius: "24px",
     border: "1px solid rgba(255, 255, 255, 0.8)",
@@ -173,7 +176,15 @@ export default function DashboardPage() {
     backdropFilter: "blur(10px)",
   };
 
-  return (
+  return loading ? (
+    <>
+      <Skeleton active />
+      <Skeleton active />
+      <Skeleton active />
+      <Skeleton active />
+      <Skeleton active />
+    </>
+  ) : (
     <div style={{ padding: "8px" }}>
       <div style={{ marginBottom: 32 }}>
         <Title
