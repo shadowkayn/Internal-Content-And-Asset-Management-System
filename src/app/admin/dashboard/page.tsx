@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const [statistics, setStatistics] = useState<any>({});
   const [articles, setArticles] = useState<any>([]);
   const [articlesTypes, setArticlesTypes] = useState<any>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const getStatistics = useCallback(async () => {
     try {
