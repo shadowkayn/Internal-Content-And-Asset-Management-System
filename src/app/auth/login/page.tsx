@@ -20,8 +20,8 @@ import {
 } from "@ant-design/icons";
 import {
   loginAction,
-  register,
-  sendEmailVerificationCode,
+  registerAction,
+  sendEmailVerificationCodeAction,
 } from "@/actions/auth.actions";
 
 export default function AuthPage() {
@@ -54,7 +54,7 @@ export default function AuthPage() {
       const email = await registerForm.validateFields(["email"]);
 
       setLoading(true);
-      const result = await sendEmailVerificationCode(email.email);
+      const result = await sendEmailVerificationCodeAction(email.email);
 
       if (result.success) {
         message.success("验证码已发送至您的邮箱！");
@@ -115,7 +115,7 @@ export default function AuthPage() {
       formData.append(key, values[key]);
     });
     setBtnLoading(true);
-    register(formData)
+    registerAction(formData)
       .then((res) => {
         if (res.success) {
           message.success("注册成功");

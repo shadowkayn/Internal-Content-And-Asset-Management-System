@@ -17,8 +17,8 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { SidebarMenu } from "@/components/SidebarMenu";
-import React, { useEffect, useState } from "react";
-import { logout } from "@/actions/auth.actions";
+import React, { useState } from "react";
+import { logoutAction } from "@/actions/auth.actions";
 import { usePathname, useRouter } from "next/dist/client/components/navigation";
 import { MenuConfig } from "@/constants/menu";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -50,7 +50,7 @@ export function AdminLayout({
 
   const onClick: MenuProps["onClick"] = ({ key }) => {
     if (key === "logout") {
-      logout().then(() => {
+      logoutAction().then(() => {
         router.replace("/auth/login");
         message.success("退出登录成功");
       });
