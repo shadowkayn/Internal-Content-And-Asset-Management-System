@@ -1,8 +1,10 @@
 import { connectDB } from "@/lib/db";
 import PermissionModel from "@/models/permission.model";
 import mongoose from "mongoose";
+import { Audit } from "@/lib/decorators";
 
 export class PermissionService {
+  @Audit("权限点管理", "添加权限点", "添加权限点")
   static async addPermission(data: any) {
     const existing = await PermissionModel.findOne({
       $or: [{ code: data.code }],
@@ -17,6 +19,7 @@ export class PermissionService {
     return await PermissionModel.create(data);
   }
 
+  @Audit("权限点管理", "更新权限点", "更新权限点")
   static async updatePermission(data: any) {
     await connectDB();
 
@@ -43,6 +46,7 @@ export class PermissionService {
     return result.toObject();
   }
 
+  @Audit("权限点管理", "删除权限点", "删除权限点")
   static async deletePermission(ids: string[]) {
     await connectDB();
 

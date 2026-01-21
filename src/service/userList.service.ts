@@ -1,9 +1,10 @@
 import { connectDB } from "@/lib/db";
 import UserModel from "@/models/user.model";
 import { hashPassword } from "@/lib/password";
+import { Audit } from "@/lib/decorators";
 
 export class UserListService {
-  // add
+  @Audit("用户管理", "创建用户", "创建用户")
   static async createUser(data: any) {
     await connectDB();
     const { username, email, phone } = data;
@@ -68,7 +69,7 @@ export class UserListService {
     return { list, total };
   }
 
-  // edit
+  @Audit("用户管理", "更新用户", "更新用户信息")
   static async updateUser(data: any) {
     await connectDB();
 
@@ -109,7 +110,7 @@ export class UserListService {
     }
   }
 
-  // update password
+  @Audit("用户管理", "修改用户密码", "修改用户密码")
   static async updateUserPassword(id: string, password: string) {
     await connectDB();
     // 先对密码进行加密处理 bcrypt 处理
@@ -136,7 +137,7 @@ export class UserListService {
     return { success: true, message: "密码修改成功" };
   }
 
-  // delete
+  @Audit("用户管理", "删除用户", "删除用户")
   static async deleteUser(ids: string[]) {
     await connectDB();
 

@@ -1,7 +1,9 @@
 import { connectDB } from "@/lib/db";
 import RoleModel from "@/models/role.model";
+import { Audit } from "@/lib/decorators";
 
 export class RoleService {
+  @Audit("角色管理", "添加角色", "添加角色")
   static async createRole(data: any) {
     const existing = await RoleModel.findOne({
       $or: [{ code: data.code }],
@@ -16,6 +18,7 @@ export class RoleService {
     return await RoleModel.create(data);
   }
 
+  @Audit("角色管理", "更新角色", "更新角色")
   static async updateRole(data: any) {
     await connectDB();
 
@@ -40,6 +43,7 @@ export class RoleService {
     return result.toObject();
   }
 
+  @Audit("角色管理", "更新角色状态", "更新角色状态")
   static async updateRoleStatus(data: any) {
     await connectDB();
 
@@ -51,6 +55,7 @@ export class RoleService {
     );
   }
 
+  @Audit("角色管理", "删除角色", "删除角色")
   static async deleteRole(ids: string[]) {
     await connectDB();
 
