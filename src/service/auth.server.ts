@@ -101,6 +101,7 @@ export class AuthServer {
     const token = await signToken({
       userId: user._id.toString(),
       role: user.role,
+      username: user?.nickname || user.username,
       allowedPaths,
     });
 
@@ -166,7 +167,8 @@ export class AuthServer {
     const token = await signToken({
       userId: newUser._id.toString(),
       role: newUser.role,
-      permissions: newUser.permissions,
+      username: newUser?.username,
+      allowedPaths: ["/admin/dashboard"],
     });
 
     (await cookies()).set("token", token, {
