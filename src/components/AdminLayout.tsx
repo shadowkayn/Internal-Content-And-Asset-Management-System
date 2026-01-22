@@ -17,7 +17,7 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { SidebarMenu } from "@/components/SidebarMenu";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { logoutAction } from "@/actions/auth.actions";
 import { usePathname, useRouter } from "next/dist/client/components/navigation";
 import { MenuConfig } from "@/constants/menu";
@@ -36,6 +36,11 @@ export function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const userInfo = useCurrentUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 用户下拉菜单
   const userMenuItems: MenuProps["items"] = [
@@ -108,6 +113,18 @@ export function AdminLayout({
 
   const breadcrumbItems = getBreadcrumbItems();
 
+  if (!mounted) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #f5f7ff 0%, #fff1f2 50%, #f0fdf4 100%)",
+        }}
+      />
+    );
+  }
+
   return (
     <Layout
       style={{
@@ -170,7 +187,9 @@ export function AdminLayout({
                 icon={<UserOutlined />}
                 style={{ backgroundColor: "#1890ff" }}
               />
-              <span style={{ fontWeight: 500 }}>{userInfo?.roleName}</span>
+              <span style={{ fontWeight: 500 }}>
+                {userInfo?.roleName || "--"}
+              </span>
             </Space>
           </Dropdown>
         </Space>

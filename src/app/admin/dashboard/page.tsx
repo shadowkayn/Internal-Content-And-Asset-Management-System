@@ -235,7 +235,7 @@ export default function DashboardPage() {
           },
         ].map((item, index) => (
           <Col xs={24} sm={12} xl={6} key={index}>
-            <Card style={cardStyle} bodyStyle={{ padding: "24px" }} hoverable>
+            <Card style={cardStyle} hoverable>
               <div
                 style={{
                   display: "flex",
@@ -334,8 +334,8 @@ export default function DashboardPage() {
                 items={[
                   {
                     color: "green",
-                    children: (
-                      <Space direction="vertical" size={0}>
+                    content: (
+                      <Space orientation={"vertical"} size={0}>
                         <Text strong>
                           凯隐 发布了新文章 《Next.js 16 实战指南》
                         </Text>
@@ -347,8 +347,8 @@ export default function DashboardPage() {
                   },
                   {
                     color: "blue",
-                    children: (
-                      <Space direction="vertical" size={0}>
+                    content: (
+                      <Space orientation="vertical" size={0}>
                         <Text strong>
                           管理员 更新了权限节点: system:dictionary
                         </Text>
@@ -370,13 +370,13 @@ export default function DashboardPage() {
                     ),
                   },
                   {
-                    dot: (
+                    icon: (
                       <CheckCircleOutlined
                         style={{ fontSize: "16px", color: "#818cf8" }}
                       />
                     ),
-                    children: (
-                      <Space direction="vertical" size={0}>
+                    content: (
+                      <Space orientation="vertical" size={0}>
                         <Text strong>新用户 zed_kayn 通过邀请链接注册</Text>
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           昨天 18:20 · 用户管理
