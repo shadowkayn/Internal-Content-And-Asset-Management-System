@@ -5,17 +5,21 @@ import { z } from "zod";
 import { ContentService } from "@/service/content.service";
 import { revalidatePath } from "next/dist/server/web/spec-extension/revalidate";
 
-const createContentSchema = z.object({
-  title: z.string({ message: "标题不能为空" }).min(1, "标题不能为空"),
-  content: z.string({ message: "内容不能为空" }).min(1, "内容不能为空"),
-  status: z.string({ message: "状态不能为空" }).min(1, "状态不能为空"),
-  category: z.string({ message: "分类不能为空" }).min(1, "分类不能为空"),
-  description: z.string({ message: "描述不能为空" }).min(1, "描述不能为空"),
-});
+const createContentSchema = z
+  .object({
+    title: z.string({ message: "标题不能为空" }).min(1, "标题不能为空"),
+    content: z.string({ message: "内容不能为空" }).min(1, "内容不能为空"),
+    status: z.string({ message: "状态不能为空" }).min(1, "状态不能为空"),
+    category: z.string({ message: "分类不能为空" }).min(1, "分类不能为空"),
+    description: z.string({ message: "描述不能为空" }).min(1, "描述不能为空"),
+  })
+  .passthrough();
 
-const editContentSchema = createContentSchema.extend({
-  id: z.string({ message: "ID 不能为空" }).min(1, "ID 不能为空"),
-});
+const editContentSchema = createContentSchema
+  .extend({
+    id: z.string({ message: "ID 不能为空" }).min(1, "ID 不能为空"),
+  })
+  .passthrough();
 
 export const createContentAction = withAuthContext(async (data: any) => {
   // 使用 zod 校验参数

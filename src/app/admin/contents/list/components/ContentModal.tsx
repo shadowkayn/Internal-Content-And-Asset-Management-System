@@ -6,6 +6,7 @@ import {
   updateContentAction,
 } from "@/actions/content.actions";
 import dynamic from "next/dynamic";
+import ImageUpload from "@/components/common/ImageUpload";
 
 // 禁用 SSR
 const RichTextEditor = dynamic(
@@ -66,6 +67,7 @@ export default function ContentModal({
           ...values,
           id: editItem?.id,
         };
+        console.log("params", params);
         res = await updateContentAction(params);
       } else {
         res = await createContentAction(values);
@@ -106,7 +108,9 @@ export default function ContentModal({
           <Input placeholder="请输入标题" />
         </Form.Item>
         <Form.Item label="内容封面" name="cover">
-          <Input placeholder="内容封面" />
+          <ImageUpload
+            onChange={(value) => form.setFieldsValue({ cover: value })}
+          />
         </Form.Item>
         <Form.Item
           label="内容分类"

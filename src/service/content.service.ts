@@ -33,6 +33,7 @@ export class ContentService {
 
   @Audit("内容管理", "更新文章", "更新文章")
   static async updateContent(data: any) {
+    console.log("updateContent", data);
     const store = userStorage.getStore();
     const currentUserId = store?.userId;
 
