@@ -67,7 +67,6 @@ export default function ContentModal({
           ...values,
           id: editItem?.id,
         };
-        console.log("params", params);
         res = await updateContentAction(params);
       } else {
         res = await createContentAction(values);

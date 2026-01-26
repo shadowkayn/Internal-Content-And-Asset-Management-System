@@ -44,7 +44,6 @@ export default function SystemSettingsPage() {
       setLoading(true);
       const res = await getSystemConfigAction();
       if (res.success) {
-        console.log("res", res);
         const values = res.data;
         setSystemConfig(values);
         setTimeout(() => {
