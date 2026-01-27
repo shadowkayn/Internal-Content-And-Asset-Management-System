@@ -3,7 +3,7 @@ import systemSettingModel from "@/models/systemSetting.model";
 import { Audit } from "@/lib/decorators";
 
 export class SystemSettingsServer {
-  @Audit("系统设置", "保存系统设置", "保存系统设置")
+  @Audit("系统设置", "UPDATE", "保存系统设置")
   static async saveSystemConfig(data: any) {
     await connectDB();
 
@@ -18,7 +18,7 @@ export class SystemSettingsServer {
     );
   }
 
-  @Audit("系统设置", "重制系统默认设置", "重制系统默认设置")
+  @Audit("系统设置", "UPDATE", "重制系统默认设置")
   static async setDefaultSystemConfig() {
     await connectDB();
     const params = {

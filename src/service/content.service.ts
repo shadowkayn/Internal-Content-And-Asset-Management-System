@@ -4,7 +4,7 @@ import { userStorage } from "@/lib/context";
 import { Audit } from "@/lib/decorators";
 
 export class ContentService {
-  @Audit("内容管理", "创建文章", "创建文章")
+  @Audit("内容管理", "POST", "创建文章")
   static async createContent(data: any) {
     const store = userStorage.getStore();
     const currentUserId = store?.userId;
@@ -31,7 +31,7 @@ export class ContentService {
     return await ContentModel.create(finalData);
   }
 
-  @Audit("内容管理", "更新文章", "更新文章")
+  @Audit("内容管理", "UPDATE", "更新文章")
   static async updateContent(data: any) {
     const store = userStorage.getStore();
     const currentUserId = store?.userId;
@@ -80,7 +80,7 @@ export class ContentService {
     return result.toObject();
   }
 
-  @Audit("内容管理", "删除文章", "删除文章")
+  @Audit("内容管理", "DELETE", "删除文章")
   static async deleteContent(ids: string[]) {
     await connectDB();
 

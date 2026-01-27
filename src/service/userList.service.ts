@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/password";
 import { Audit } from "@/lib/decorators";
 
 export class UserListService {
-  @Audit("用户管理", "创建用户", "创建用户")
+  @Audit("用户管理", "POST", "创建用户")
   static async createUser(data: any) {
     await connectDB();
     const { username, email, phone } = data;
@@ -69,7 +69,7 @@ export class UserListService {
     return { list, total };
   }
 
-  @Audit("用户管理", "更新用户", "更新用户信息")
+  @Audit("用户管理", "UPDATE", "更新用户信息")
   static async updateUser(data: any) {
     await connectDB();
 
@@ -110,7 +110,7 @@ export class UserListService {
     }
   }
 
-  @Audit("用户管理", "修改用户密码", "修改用户密码")
+  @Audit("用户管理", "UPDATE", "修改用户密码")
   static async updateUserPassword(id: string, password: string) {
     await connectDB();
     // 先对密码进行加密处理 bcrypt 处理
@@ -137,7 +137,7 @@ export class UserListService {
     return { success: true, message: "密码修改成功" };
   }
 
-  @Audit("用户管理", "删除用户", "删除用户")
+  @Audit("用户管理", "DELETE", "删除用户")
   static async deleteUser(ids: string[]) {
     await connectDB();
 

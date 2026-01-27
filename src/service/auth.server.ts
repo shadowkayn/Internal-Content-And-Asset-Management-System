@@ -17,7 +17,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export class AuthServer {
-  @Audit("用户认证", "发送邮箱验证码", "发送邮箱验证码")
+  @Audit("用户认证", "POST", "发送邮箱验证码")
   static async sendEmailVerificationCode(email: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -35,7 +35,7 @@ export class AuthServer {
     });
   }
 
-  @Audit("用户认证", "登录", "用户登录")
+  @Audit("用户认证", "POST", "用户登录")
   static async login(formData: FormData) {
     await connectDB();
     const cookieStore = await cookies();
@@ -113,7 +113,7 @@ export class AuthServer {
     });
   }
 
-  @Audit("用户认证", "登出", "用户登出")
+  @Audit("用户认证", "POST", "用户登出")
   static async logout() {
     (await cookies()).set("token", "", {
       httpOnly: true,
@@ -124,7 +124,7 @@ export class AuthServer {
     });
   }
 
-  @Audit("用户认证", "注册", "用户注册")
+  @Audit("用户认证", "POST", "用户注册")
   static async register(formData: FormData) {
     await connectDB();
 

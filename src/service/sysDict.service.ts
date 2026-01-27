@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { Audit } from "@/lib/decorators";
 
 export class SysDictService {
-  @Audit("字典管理", "创建字典", "创建字典")
+  @Audit("字典管理", "POST", "创建字典")
   static async createDict(data: any) {
     await connectDB();
 
@@ -22,7 +22,7 @@ export class SysDictService {
     return await SysDictTypeModel.create(data);
   }
 
-  @Audit("字典管理", "更新字典信息", "更新字典信息")
+  @Audit("字典管理", "UPDATE", "更新字典信息")
   static async updateDictBasicInfo(data: any) {
     await connectDB();
 
@@ -40,7 +40,7 @@ export class SysDictService {
     return result;
   }
 
-  @Audit("字典管理", "更新字典详细数据", "更新字典详细数据")
+  @Audit("字典管理", "UPDATE", "更新字典详细数据")
   static async updateDictData(id: string, newDictData: any) {
     await connectDB();
 
@@ -92,7 +92,7 @@ export class SysDictService {
     return JSON.parse(JSON.stringify(data));
   }
 
-  @Audit("字典管理", "删除字典", "删除字典")
+  @Audit("字典管理", "DELETE", "删除字典")
   static async deleteDict(ids: string[]) {
     await connectDB();
 
@@ -169,7 +169,7 @@ export class SysDictService {
     return { list, total };
   }
 
-  @Audit("字典管理", "更新字典状态", "更新字典状态")
+  @Audit("字典管理", "UPDATE", "更新字典状态")
   static async updateDictStatus(id: string, dictStatus: string) {
     await connectDB();
 

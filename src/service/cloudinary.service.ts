@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { Audit } from "@/lib/decorators";
 
 // 配置
 cloudinary.config({
@@ -8,6 +9,7 @@ cloudinary.config({
 });
 
 export class CloudinaryService {
+  @Audit("文件上传", "POST", "上传文件")
   static async uploadStream(
     buffer: Buffer,
     folder: string = "kayn_admin",
