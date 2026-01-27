@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { message, Upload } from "antd";
+import { message, Upload, UploadProps } from "antd";
 import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 
-interface Props {
+interface ImageUploadProps extends Omit<UploadProps, "onChange" | "value"> {
   value?: string;
   onChange?: (url: string) => void;
 }
-export default function ImageUpload({ onChange, value }: Props) {
+export default function ImageUpload({
+  onChange,
+  value,
+  ...restProps
+}: ImageUploadProps) {
   const [loading, setLoading] = useState(false);
 
   const handleUpload = async (options: any) => {
@@ -41,6 +45,13 @@ export default function ImageUpload({ onChange, value }: Props) {
     }
   };
 
+  const uploadButton = (
+    <button style={{ border: 0, background: "none" }} type="button">
+      {loading ? <LoadingOutlined /> : <PlusOutlined />}
+      <div style={{ marginTop: 8 }}>Upload</div>
+    </button>
+  );
+
   return (
     <div className="custom-uploader">
       <Upload
@@ -48,24 +59,20 @@ export default function ImageUpload({ onChange, value }: Props) {
         showUploadList={false}
         customRequest={handleUpload} // 自定义请求
         accept="image/*"
-        style={{ borderRadius: "20px" }}
+        {...restProps}
       >
         {value ? (
           <img
             src={value}
-            alt="cover"
+            alt="avatar"
+            draggable={false}
             style={{
               width: "100%",
-              borderRadius: "16px",
-              height: "100%",
               objectFit: "cover",
             }}
           />
         ) : (
-          <div style={{ padding: "20px" }}>
-            {loading ? <LoadingOutlined /> : <PlusOutlined />}
-            <div style={{ marginTop: 8 }}>选择图片</div>
-          </div>
+          uploadButton
         )}
       </Upload>
 

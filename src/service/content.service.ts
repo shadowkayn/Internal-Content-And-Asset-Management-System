@@ -221,6 +221,14 @@ export class ContentService {
             avatar: result.author.avatar,
           }
         : null,
+      updater: result.updater
+        ? {
+            id: result.updater._id.toString(),
+            nickname: result.updater.nickname,
+            role: result.updater.role,
+            avatar: result.updater.avatar,
+          }
+        : null,
     };
   }
 }

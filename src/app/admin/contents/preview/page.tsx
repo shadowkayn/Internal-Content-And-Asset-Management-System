@@ -154,6 +154,7 @@ export default function ContentsPreviewPage() {
                     placeholder="请选择分类"
                     size="large"
                     allowClear
+                    style={{ width: 140 }}
                     onChange={() => loadListData(1)}
                   />
                 </Form.Item>
@@ -163,6 +164,7 @@ export default function ContentsPreviewPage() {
                     placeholder="请选择状态"
                     size="large"
                     allowClear
+                    style={{ width: 140 }}
                     onChange={() => loadListData(1)}
                   />
                 </Form.Item>

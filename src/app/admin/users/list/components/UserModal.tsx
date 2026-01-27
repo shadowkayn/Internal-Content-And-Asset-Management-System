@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, message, Modal, Switch, Upload, UploadProps } from "antd";
-import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import { Form, Input, message, Modal, Switch } from "antd";
 import { addUserAction, updateUserAction } from "@/actions/user.actions";
 import CommonSelect from "@/components/common/CommonSelect";
 import { getRoleListAction } from "@/actions/role.action";
+import ImageUpload from "@/components/common/ImageUpload";
 
 interface UserModalProps {
   open: boolean;
@@ -12,24 +12,6 @@ interface UserModalProps {
   onClose: () => void;
   onSuccessCallback: () => void;
 }
-
-const getBase64 = (img: any, callback: (url: string) => void) => {
-  const reader = new FileReader();
-  reader.addEventListener("load", () => callback(reader.result as string));
-  reader.readAsDataURL(img);
-};
-
-const beforeUpload = (file: any) => {
-  const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
-  if (!isJpgOrPng) {
-    message.error("You can only upload JPG/PNG file!");
-  }
-  const isLt2M = file.size / 1024 / 1024 < 2;
-  if (!isLt2M) {
-    message.error("Image must smaller than 2MB!");
-  }
-  return isJpgOrPng && isLt2M;
-};
 
 export default function UserModal({
   open,
@@ -40,8 +22,6 @@ export default function UserModal({
 }: UserModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>();
   const [roleList, setRoleList] = useState<any>([]);
 
   const phoneRegex =
@@ -115,27 +95,6 @@ export default function UserModal({
       setLoading(false);
     }
   };
-
-  const handleChange: UploadProps["onChange"] = (info) => {
-    if (info.file.status === "uploading") {
-      setUploadLoading(true);
-      return;
-    }
-    if (info.file.status === "done") {
-      // Get this url from response in real world.
-      getBase64(info.file.originFileObj as any, (url: string) => {
-        setUploadLoading(false);
-        setImageUrl(url);
-      });
-    }
-  };
-
-  const uploadButton = (
-    <button style={{ border: 0, background: "none" }} type="button">
-      {uploadLoading ? <LoadingOutlined /> : <PlusOutlined />}
-      <div style={{ marginTop: 8 }}>Upload</div>
-    </button>
-  );
 
   return (
     <Modal
@@ -214,26 +173,9 @@ export default function UserModal({
           <Switch checkedChildren="启用" unCheckedChildren="禁用" />
         </Form.Item>
         <Form.Item label="头像" name="avatar">
-          <Upload
-            name="avatar"
-            listType="picture-circle"
-            className="avatar-uploader"
-            showUploadList={false}
-            action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-            beforeUpload={beforeUpload}
-            onChange={handleChange}
-          >
-            {imageUrl ? (
-              <img
-                draggable={false}
-                src={imageUrl}
-                alt="avatar"
-                style={{ width: "100%" }}
-              />
-            ) : (
-              uploadButton
-            )}
-          </Upload>
+          <ImageUpload
+            onChange={(url) => form.setFieldsValue({ avatar: url })}
+          />
         </Form.Item>
       </Form>
     </Modal>

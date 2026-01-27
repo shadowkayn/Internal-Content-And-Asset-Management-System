@@ -14,7 +14,6 @@ import {
   Typography,
   InputNumber,
   Divider,
-  Skeleton,
   Modal,
 } from "antd";
 import {

@@ -92,6 +92,8 @@ export default function ContentDetailPage() {
   };
 
   const fetchData = async () => {
+    if (!id) return;
+
     setLoading(true);
     try {
       const res = await getContentDetail(id as string);
@@ -114,17 +116,9 @@ export default function ContentDetailPage() {
     }
   };
 
-  // 根据 ID 加载数据
   useEffect(() => {
-    fetchData();
-
-    if (id) {
-      const timer = setTimeout(() => {
-        fetchData();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [id]);
+    fetchData().then();
+  }, []);
 
   const onBackList = () => {
     router.push("/admin/contents/preview");
@@ -418,11 +412,7 @@ export default function ContentDetailPage() {
                   boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
                 }}
               >
-                <Descriptions
-                  column={1}
-                  size="small"
-                  labelStyle={{ color: "#94a3b8" }}
-                >
+                <Descriptions column={1} size="small">
                   <Descriptions.Item label="文档ID">
                     <Text
                       copyable

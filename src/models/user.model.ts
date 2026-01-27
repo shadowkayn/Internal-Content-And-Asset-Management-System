@@ -63,6 +63,10 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       default: "",
     },
+    avatar: {
+      type: String,
+      default: "",
+    },
     deleteFlag: {
       type: Number,
       default: 0,
