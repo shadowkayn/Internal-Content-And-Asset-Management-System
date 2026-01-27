@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { Audit } from "@/lib/decorators";
 
 export class PermissionService {
-  @Audit("权限点管理", "POST", "添加权限点")
+  @Audit("权限点管理", "CREATE", "添加权限点")
   static async addPermission(data: any) {
     const existing = await PermissionModel.findOne({
       $or: [{ code: data.code }],

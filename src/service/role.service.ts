@@ -3,7 +3,7 @@ import RoleModel from "@/models/role.model";
 import { Audit } from "@/lib/decorators";
 
 export class RoleService {
-  @Audit("角色管理", "POST", "添加角色")
+  @Audit("角色管理", "CREATE", "添加角色")
   static async createRole(data: any) {
     const existing = await RoleModel.findOne({
       $or: [{ code: data.code }],

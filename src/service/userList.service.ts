@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/password";
 import { Audit } from "@/lib/decorators";
 
 export class UserListService {
-  @Audit("用户管理", "POST", "创建用户")
+  @Audit("用户管理", "CREATE", "创建用户")
   static async createUser(data: any) {
     await connectDB();
     const { username, email, phone } = data;

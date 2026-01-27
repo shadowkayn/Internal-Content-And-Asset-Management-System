@@ -124,7 +124,7 @@ export class AuthServer {
     });
   }
 
-  @Audit("用户认证", "POST", "用户注册")
+  @Audit("用户认证", "CREATE", "用户注册")
   static async register(formData: FormData) {
     await connectDB();
 

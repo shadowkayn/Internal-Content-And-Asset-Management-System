@@ -4,7 +4,7 @@ import { userStorage } from "@/lib/context";
 import { Audit } from "@/lib/decorators";
 
 export class ContentService {
-  @Audit("内容管理", "POST", "创建文章")
+  @Audit("内容管理", "CREATE", "创建文章")
   static async createContent(data: any) {
     const store = userStorage.getStore();
     const currentUserId = store?.userId;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Tag,
@@ -8,12 +8,12 @@ import {
   Card,
   Form,
   Input,
-  Select,
   DatePicker,
   Button,
   Modal,
   Descriptions,
   Typography,
+  message,
 } from "antd";
 import {
   SearchOutlined,
@@ -21,6 +21,7 @@ import {
   InfoCircleOutlined,
   MonitorOutlined,
 } from "@ant-design/icons";
+import { getLogListAction } from "@/actions/log.action";
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
@@ -28,59 +29,94 @@ const { Text } = Typography;
 export default function SystemLogsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [dataSource, setDataSource] = useState([]);
 
-  // 模拟数据
-  const mockLogs = [
-    {
-      id: "1",
-      module: "内容管理",
-      action: "UPDATE",
-      desc: "修改文章详情",
-      operator: "超级管理员",
-      ip: "192.168.1.105",
-      location: "北京-海淀",
-      status: "success",
-      duration: "120ms",
-      createTime: "2026-01-20 14:22:15",
-      params: '{"id": "123", "title": "新标题", "status": "published"}',
-    },
-    {
-      id: "2",
-      module: "用户管理",
-      action: "DELETE",
-      desc: "删除用户",
-      operator: "凯隐",
-      ip: "110.12.33.45",
-      location: "广东-深圳",
-      status: "fail",
-      duration: "45ms",
-      createTime: "2026-01-20 12:05:00",
-      params: '{"userId": "999"}',
-    },
-  ];
+  useEffect(() => {
+    fetchData().then();
+  }, [pagination.current, pagination.pageSize]);
 
-  const columns = [
-    { title: "日志编号", dataIndex: "id", key: "id", width: 100 },
-    { title: "操作模块", dataIndex: "module", key: "module" },
+  const fetchData = async () => {
+    const { current, pageSize } = pagination;
+    const { moduleName, username, date } = form.getFieldsValue();
+    const [start, end] = date || [];
+    const query = {
+      page: current,
+      pageSize,
+      logModule: moduleName,
+      username,
+      startTime: start ? start.format("YYYY-MM-DD") : undefined,
+      endTime: end ? end.format("YYYY-MM-DD") : undefined,
+    };
+    try {
+      setLoading(true);
+      const res = await getLogListAction(query);
+      if (res.success) {
+        setDataSource((res.data?.list as any) || []);
+        setPagination((prev) => {
+          return {
+            ...prev,
+            total: res.data.total,
+          };
+        });
+      } else {
+        message.error(res.error || "查询失败");
+      }
+    } catch (e: any) {
+      console.error(e.message);
+      message.error(e.message || "查询失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const columns: any = [
+    {
+      title: "日志编号",
+      align: "center",
+      dataIndex: "id",
+      key: "id",
+      width: 100,
+    },
+    { title: "操作模块", align: "center", dataIndex: "module", key: "module" },
     {
       title: "操作类型",
+      align: "center",
       dataIndex: "action",
       key: "action",
       render: (action: string) => {
-        const colors: any = { UPDATE: "blue", DELETE: "red", CREATE: "green" };
-        return (
-          <Tag color={colors[action]} bordered={false}>
-            {action}
-          </Tag>
-        );
+        const colors: any = {
+          UPDATE: "blue",
+          DELETE: "red",
+          CREATE: "green",
+          POST: "orange",
+        };
+        return <Tag color={colors[action]}>{action}</Tag>;
       },
     },
-    { title: "操作描述", dataIndex: "desc", key: "desc" },
-    { title: "操作人", dataIndex: "operator", key: "operator" },
+    {
+      title: "操作描述",
+      align: "center",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "操作人",
+      align: "center",
+      dataIndex: "operator",
+      key: "operator",
+    },
     {
       title: "终端地址",
+      align: "center",
       render: (_: any, record: any) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text style={{ fontSize: 12 }}>{record.ip}</Text>
           <Text type="secondary" style={{ fontSize: 11 }}>
             {record.location}
@@ -90,6 +126,7 @@ export default function SystemLogsPage() {
     },
     {
       title: "状态",
+      align: "center",
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
@@ -103,12 +140,14 @@ export default function SystemLogsPage() {
     },
     {
       title: "操作时间",
-      dataIndex: "createTime",
-      key: "createTime",
+      align: "center",
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 180,
     },
     {
       title: "操作",
+      align: "center",
       key: "action",
       render: (_: any, record: any) => (
         <Button
@@ -136,25 +175,40 @@ export default function SystemLogsPage() {
           backdropFilter: "blur(10px)",
         }}
       >
-        <Form layout="inline">
+        <Form form={form} layout="inline">
           <Space wrap>
-            <Form.Item label="操作人">
-              <Input placeholder="用户名" />
+            <Form.Item label="操作人" name="username">
+              <Input placeholder="请输入用户名" />
             </Form.Item>
-            <Form.Item label="模块">
-              <Select
-                placeholder="全部"
-                style={{ width: 120 }}
-                options={[{ label: "内容", value: "content" }]}
-              />
+            <Form.Item label="模块" name="moduleName">
+              <Input placeholder="请输入模块名称" />
             </Form.Item>
-            <Form.Item label="日期">
-              <RangePicker />
+            <Form.Item label="日期" name="date">
+              <RangePicker format="YYYY/MM/DD" />
             </Form.Item>
-            <Button type="primary" icon={<SearchOutlined />}>
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={fetchData}
+            >
               查询
             </Button>
-            <Button icon={<ReloadOutlined />}>重置</Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                form.resetFields();
+                setPagination((prev) => {
+                  return {
+                    ...prev,
+                    current: 1,
+                    pageSize: 10,
+                  };
+                });
+                fetchData().then();
+              }}
+            >
+              重置
+            </Button>
           </Space>
         </Form>
       </Card>
@@ -174,7 +228,26 @@ export default function SystemLogsPage() {
           </Space>
         }
       >
-        <Table columns={columns} dataSource={mockLogs} rowKey="id" />
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showQuickJumper: true,
+            showSizeChanger: true,
+            onChange: (page, pageSize) => {
+              setPagination((prev) => ({
+                ...prev,
+                current: page,
+                pageSize: pageSize || prev.pageSize,
+              }));
+            },
+          }}
+        />
       </Card>
 
       {/* 详情弹窗 */}
@@ -183,7 +256,7 @@ export default function SystemLogsPage() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
-        width={600}
+        width={900}
       >
         {selectedLog && (
           <Descriptions
@@ -192,19 +265,22 @@ export default function SystemLogsPage() {
             size="small"
             style={{ marginTop: 16 }}
           >
-            <Descriptions.Item label="请求接口">
-              {selectedLog.desc}
+            <Descriptions.Item label="请求描述">
+              {selectedLog.description}
             </Descriptions.Item>
             <Descriptions.Item label="耗时">
               <Tag color="orange">{selectedLog.duration}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="请求参数">
+            <Descriptions.Item label="请求参数" style={{}}>
               <pre
                 style={{
                   background: "#f8fafc",
                   padding: 12,
                   borderRadius: 8,
                   fontSize: 12,
+                  maxHeight: 550,
+                  maxWidth: 750,
+                  overflow: "auto",
                 }}
               >
                 {JSON.stringify(JSON.parse(selectedLog.params), null, 2)}

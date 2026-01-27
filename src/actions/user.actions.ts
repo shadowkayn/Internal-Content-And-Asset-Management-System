@@ -58,7 +58,6 @@ export async function updateUserAction(data: any) {
   if (!validatedData.success) {
     return { error: validatedData.error.issues[0].message };
   }
-  console.log(validatedData.data, "validatedData.data");
 
   try {
     await UserListService.updateUser(validatedData.data);

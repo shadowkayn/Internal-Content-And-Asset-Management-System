@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { Audit } from "@/lib/decorators";
 
 export class SysDictService {
-  @Audit("字典管理", "POST", "创建字典")
+  @Audit("字典管理", "CREATE", "创建字典")
   static async createDict(data: any) {
     await connectDB();
 

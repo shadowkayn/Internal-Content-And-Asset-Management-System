@@ -11,6 +11,7 @@ export interface ILog extends Document {
   params: string; // 请求参数 (JSON字符串)
   duration: number; // 耗时 (ms)
   errorMsg?: string; // 错误信息
+  deleteFlag: number;
 }
 
 const LogSchema = new Schema(
@@ -25,6 +26,7 @@ const LogSchema = new Schema(
     params: { type: String },
     duration: { type: Number },
     errorMsg: { type: String },
+    deleteFlag: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

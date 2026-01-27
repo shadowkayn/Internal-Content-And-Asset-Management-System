@@ -89,6 +89,9 @@ importers:
       cloudinary:
         specifier: ^2.9.0
         version: 2.9.0
+      dayjs:
+        specifier: ^1.11.19
+        version: 1.11.19
       geoip-lite:
         specifier: ^1.4.10
         version: 1.4.10
