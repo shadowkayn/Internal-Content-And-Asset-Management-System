@@ -23,6 +23,8 @@ import {
   registerAction,
   sendEmailVerificationCodeAction,
 } from "@/actions/auth.actions";
+import { motion } from "framer-motion";
+import AnimeBackground from "@/app/auth/login/cpmponents/AuroraBackground";
 
 export default function AuthPage() {
   // 获取表单实例
@@ -135,216 +137,212 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={styles.container}>
-      {/* 背景装饰 */}
-      <div style={styles.bgCircle1}></div>
-      <div style={styles.bgCircle2}></div>
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <AnimeBackground />
 
-      <Card style={styles.card} variant={"outlined"}>
-        <div style={styles.header}>
-          <h2 style={styles.title}>ADMIN SYSTEM</h2>
-          <p style={styles.subtitle}>欢迎使用后台管理系统</p>
-        </div>
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        style={{ zIndex: 1 }}
+      >
+        <Card style={styles.card} variant={"outlined"}>
+          <div style={styles.header}>
+            <h2 style={styles.title}>
+              KAYN <span style={styles.titleAccent}>ADMIN</span>
+            </h2>
+            <p style={styles.subtitle}>欢迎使用沉浸式管理系统</p>
+          </div>
 
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          centered
-          items={[
-            {
-              key: "login",
-              label: "账号登录",
-              children: (
-                <Form
-                  form={loginForm}
-                  onFinish={loginFn}
-                  layout="vertical"
-                  size="large"
-                >
-                  <Form.Item
-                    name="username"
-                    rules={[{ required: true, message: "请输入用户名或邮箱" }]}
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            centered
+            items={[
+              {
+                key: "login",
+                label: "账号登录",
+                children: (
+                  <Form
+                    form={loginForm}
+                    onFinish={loginFn}
+                    layout="vertical"
+                    size="large"
                   >
-                    <Input
-                      prefix={<UserOutlined />}
-                      placeholder="用户名 / 邮箱"
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="password"
-                    rules={[{ required: true, message: "请输入密码" }]}
-                  >
-                    <Input.Password
-                      prefix={<LockOutlined />}
-                      placeholder="密码"
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="captcha"
-                    rules={[{ required: true, message: "请输入验证码" }]}
-                  >
-                    <div style={styles.captchaRow}>
+                    <Form.Item
+                      name="username"
+                      rules={[
+                        { required: true, message: "请输入用户名或邮箱" },
+                      ]}
+                    >
                       <Input
-                        placeholder="验证码"
-                        prefix={<SafetyCertificateOutlined />}
+                        prefix={<UserOutlined />}
+                        placeholder="用户名 / 邮箱"
                       />
-                      <img
-                        ref={captchaRef}
-                        src="/api/captcha"
-                        alt="captcha"
-                        style={styles.captchaImg}
-                        onClick={(e) =>
-                          (e.currentTarget.src = "/api/captcha?" + Date.now())
-                        }
-                      />
-                    </div>
-                  </Form.Item>
-
-                  <div style={styles.rememberRow}>
-                    <Form.Item name="remember" valuePropName="checked" noStyle>
-                      <Checkbox>Remember</Checkbox>
                     </Form.Item>
-                  </div>
 
-                  <Button
-                    loading={btnLoading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    style={styles.submitBtn}
-                  >
-                    立即登录
-                  </Button>
-                </Form>
-              ),
-            },
-            {
-              key: "register",
-              label: "新用户注册",
-              children: (
-                <Form
-                  form={registerForm}
-                  onFinish={registerFn}
-                  layout="vertical"
-                  size="large"
-                >
-                  <Form.Item
-                    name="username"
-                    rules={[{ required: true, message: "请设置用户名" }]}
-                  >
-                    <Input prefix={<UserOutlined />} placeholder="用户名" />
-                  </Form.Item>
+                    <Form.Item
+                      name="password"
+                      rules={[{ required: true, message: "请输入密码" }]}
+                    >
+                      <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="密码"
+                      />
+                    </Form.Item>
 
-                  <Form.Item
-                    name="email"
-                    rules={[
-                      { required: true, message: "请输入邮箱" },
-                      { type: "email", message: "邮箱格式不正确" },
-                    ]}
-                  >
-                    <Input
-                      prefix={<MailOutlined />}
-                      placeholder="绑定邮箱地址"
-                    />
-                  </Form.Item>
+                    <Form.Item
+                      name="captcha"
+                      rules={[{ required: true, message: "请输入验证码" }]}
+                    >
+                      <div style={styles.captchaRow}>
+                        <Input
+                          placeholder="验证码"
+                          prefix={<SafetyCertificateOutlined />}
+                        />
+                        <img
+                          ref={captchaRef}
+                          src="/api/captcha"
+                          alt="captcha"
+                          style={styles.captchaImg}
+                          onClick={(e) =>
+                            (e.currentTarget.src = "/api/captcha?" + Date.now())
+                          }
+                        />
+                      </div>
+                    </Form.Item>
 
-                  <Form.Item required>
-                    <Row gutter={8}>
-                      <Col span={14}>
-                        <Form.Item
-                          name="code"
-                          noStyle
-                          rules={[{ required: true, message: "请输入验证码" }]}
-                        >
-                          <Input
-                            prefix={<SafetyCertificateOutlined />}
-                            placeholder="验证码"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={10}>
-                        <Button
-                          disabled={countdown > 0}
-                          loading={loading}
-                          onClick={sendEmailCode}
-                          type={"primary"}
-                          ghost
-                        >
-                          {countdown > 0
-                            ? `${countdown}s 后重试`
-                            : "获取验证码"}
-                        </Button>
-                      </Col>
-                    </Row>
-                  </Form.Item>
+                    <div style={styles.rememberRow}>
+                      <Form.Item
+                        name="remember"
+                        valuePropName="checked"
+                        noStyle
+                      >
+                        <Checkbox>Remember</Checkbox>
+                      </Form.Item>
+                    </div>
 
-                  <Form.Item
-                    name="password"
-                    rules={[{ required: true, message: "请设置密码" }]}
+                    <Button
+                      loading={btnLoading}
+                      type="primary"
+                      htmlType="submit"
+                      block
+                      style={styles.submitBtn}
+                    >
+                      立即登录
+                    </Button>
+                  </Form>
+                ),
+              },
+              {
+                key: "register",
+                label: "新用户注册",
+                children: (
+                  <Form
+                    form={registerForm}
+                    onFinish={registerFn}
+                    layout="vertical"
+                    size="large"
                   >
-                    <Input.Password
-                      prefix={<LockOutlined />}
-                      placeholder="设置密码"
-                    />
-                  </Form.Item>
+                    <Form.Item
+                      name="username"
+                      rules={[{ required: true, message: "请设置用户名" }]}
+                    >
+                      <Input prefix={<UserOutlined />} placeholder="用户名" />
+                    </Form.Item>
 
-                  <Button
-                    loading={btnLoading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    style={styles.submitBtn}
-                  >
-                    注 册
-                  </Button>
-                </Form>
-              ),
-            },
-          ]}
-        ></Tabs>
-      </Card>
+                    <Form.Item
+                      name="email"
+                      rules={[
+                        { required: true, message: "请输入邮箱" },
+                        { type: "email", message: "邮箱格式不正确" },
+                      ]}
+                    >
+                      <Input
+                        prefix={<MailOutlined />}
+                        placeholder="绑定邮箱地址"
+                      />
+                    </Form.Item>
+
+                    <Form.Item required>
+                      <Row gutter={8}>
+                        <Col span={14}>
+                          <Form.Item
+                            name="code"
+                            noStyle
+                            rules={[
+                              { required: true, message: "请输入验证码" },
+                            ]}
+                          >
+                            <Input
+                              prefix={<SafetyCertificateOutlined />}
+                              placeholder="验证码"
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={10}>
+                          <Button
+                            disabled={countdown > 0}
+                            loading={loading}
+                            onClick={sendEmailCode}
+                            type={"primary"}
+                            ghost
+                          >
+                            {countdown > 0
+                              ? `${countdown}s 后重试`
+                              : "获取验证码"}
+                          </Button>
+                        </Col>
+                      </Row>
+                    </Form.Item>
+
+                    <Form.Item
+                      name="password"
+                      rules={[{ required: true, message: "请设置密码" }]}
+                    >
+                      <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="设置密码"
+                      />
+                    </Form.Item>
+
+                    <Button
+                      loading={btnLoading}
+                      type="primary"
+                      htmlType="submit"
+                      block
+                      style={styles.submitBtn}
+                    >
+                      注 册
+                    </Button>
+                  </Form>
+                ),
+              },
+            ]}
+          ></Tabs>
+        </Card>
+      </motion.div>
     </div>
   );
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-    position: "relative",
-    overflow: "hidden",
-  },
-  bgCircle1: {
-    position: "absolute",
-    width: "400px",
-    height: "400px",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    borderRadius: "50%",
-    top: "-100px",
-    right: "-100px",
-    opacity: 0.1,
-  },
-  bgCircle2: {
-    position: "absolute",
-    width: "300px",
-    height: "300px",
-    background: "#1890ff",
-    borderRadius: "50%",
-    bottom: "-50px",
-    left: "-50px",
-    opacity: 0.1,
-  },
   card: {
-    width: 400,
-    borderRadius: 16,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
-    backdropFilter: "blur(10px)",
-    background: "rgba(255, 255, 255, 0.9)",
+    width: 420,
+    borderRadius: 32,
+    background: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(25px) saturate(160%)",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    boxShadow: "0 40px 100px -20px rgba(0,0,0,0.3)",
   },
   header: {
     textAlign: "center",
@@ -356,9 +354,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 700,
     letterSpacing: "2px",
     color: "#1a1a1a",
+    textShadow: "0 2px 10px rgba(0,0,0,0.2)",
   },
   subtitle: {
-    color: "#8c8c8c",
+    color: "#a855f7",
     marginTop: 8,
   },
   captchaRow: {
@@ -372,11 +371,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: "1px solid #d9d9d9",
   },
   submitBtn: {
-    height: 45,
-    borderRadius: 8,
+    height: 48,
+    borderRadius: 14,
     fontSize: 16,
     fontWeight: 600,
     marginTop: 12,
+    background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+    border: "none",
+    boxShadow: "0 10px 20px rgba(99, 102, 241, 0.2)",
   },
   rememberRow: {
     display: "flex",
