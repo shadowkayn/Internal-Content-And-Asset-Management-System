@@ -24,32 +24,100 @@ import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
+import { Extension } from "@tiptap/core";
 
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import {
   BoldOutlined,
   ItalicOutlined,
   UnderlineOutlined,
-  StrikethroughOutlined,
   OrderedListOutlined,
   UnorderedListOutlined,
   LinkOutlined,
   PictureOutlined,
   TableOutlined,
   RollbackOutlined,
-  EnterOutlined,
   ClearOutlined,
-  FontSizeOutlined,
   BlockOutlined,
-  CodeOutlined,
   FontColorsOutlined,
   BgColorsOutlined,
   AlignLeftOutlined,
   AlignCenterOutlined,
   AlignRightOutlined,
   CheckSquareOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
-import { Button, Tooltip, Space, Divider, Popover, ColorPicker } from "antd";
+import {
+  Button,
+  Tooltip,
+  Space,
+  Divider,
+  Popover,
+  ColorPicker,
+  Select,
+  message,
+} from "antd";
+
+// 自定义字体大小扩展
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    fontSize: {
+      setFontSize: (fontSize: string) => ReturnType;
+      unsetFontSize: () => ReturnType;
+    };
+  }
+}
+
+const FontSizeExtension = Extension.create({
+  name: "fontSize",
+
+  addOptions() {
+    return {
+      types: ["textStyle"],
+    };
+  },
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element: HTMLElement) =>
+              element.style.fontSize?.replace(/['"]+/g, ""),
+            renderHTML: (attributes: any) => {
+              if (!attributes.fontSize) {
+                return {};
+              }
+              return {
+                style: `font-size: ${attributes.fontSize}`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+
+  addCommands() {
+    return {
+      setFontSize:
+        (fontSize: string) =>
+        ({ chain }: any) => {
+          return chain().setMark("textStyle", { fontSize }).run();
+        },
+      unsetFontSize:
+        () =>
+        ({ chain }: any) => {
+          return chain()
+            .setMark("textStyle", { fontSize: null })
+            .removeEmptyTextStyle()
+            .run();
+        },
+    };
+  },
+});
 
 // 工具栏按钮组件
 const ToolButton = ({ onClick, icon, active, title, danger = false }: any) => (
@@ -70,12 +138,15 @@ const ToolButton = ({ onClick, icon, active, title, danger = false }: any) => (
 
 const RichTextEditor = ({ value, onChange }: any) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [currentFontSize, setCurrentFontSize] = useState("16px");
 
-  const editor = useEditor({
+  const editor: any = useEditor({
     extensions: [
       StarterKit,
       Underline,
       TextStyle,
+      FontSizeExtension, // 添加字体大小扩展
       Color,
       Highlight.configure({ multicolor: true }), // 必须配置 multicolor 才能使用自定义颜色
       TextAlign.configure({ types: ["heading", "paragraph"] }), // 指定哪些节点可以对齐
@@ -86,7 +157,7 @@ const RichTextEditor = ({ value, onChange }: any) => {
       TableHeader,
       TableCell,
       Image.configure({
-        allowBase64: true,
+        allowBase64: false, // 禁用 base64，使用上传后的 URL
         HTMLAttributes: { class: "editor-image" },
       }),
       Link.configure({
@@ -99,6 +170,11 @@ const RichTextEditor = ({ value, onChange }: any) => {
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
+    },
+    onSelectionUpdate: ({ editor }) => {
+      // 更新当前字体大小
+      const fontSize = editor.getAttributes("textStyle").fontSize || "16px";
+      setCurrentFontSize(fontSize);
     },
   });
 
@@ -115,19 +191,59 @@ const RichTextEditor = ({ value, onChange }: any) => {
     if (url) editor?.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        editor
-          ?.chain()
-          .focus()
-          .setImage({ src: event.target?.result as string })
-          .run();
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 验证文件类型
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      message.error("不支持的文件类型，请上传 JPG、PNG、WEBP 或 GIF 格式");
+      return;
     }
+
+    // 验证文件大小
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("文件大小不能超过 5MB");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.code === 200 && result.data?.url) {
+        // 插入图片到编辑器
+        editor?.chain().focus().setImage({ src: result.data.url }).run();
+        message.success("图片上传成功");
+      } else {
+        message.error(result.message || "图片上传失败");
+      }
+    } catch (error) {
+      console.error("图片上传错误:", error);
+      message.error("图片上传失败，请重试");
+    } finally {
+      setUploading(false);
+      // 清空 input，允许重复上传同一文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // 设置字体大小
+  const setFontSize = (size: string) => {
+    editor?.chain().focus().setMark("textStyle", { fontSize: size }).run();
+    setCurrentFontSize(size);
   };
 
   if (!editor) return null;
@@ -193,6 +309,27 @@ const RichTextEditor = ({ value, onChange }: any) => {
             onClick={() => editor.chain().focus().toggleUnderline().run()}
             active={editor.isActive("underline")}
           />
+
+          <Tooltip title="字体大小">
+            <Select
+              size="small"
+              style={{ width: 80 }}
+              placeholder="字号"
+              value={currentFontSize}
+              onChange={setFontSize}
+              options={[
+                { label: "12px", value: "12px" },
+                { label: "14px", value: "14px" },
+                { label: "16px", value: "16px" },
+                { label: "18px", value: "18px" },
+                { label: "20px", value: "20px" },
+                { label: "24px", value: "24px" },
+                { label: "28px", value: "28px" },
+                { label: "32px", value: "32px" },
+                { label: "36px", value: "36px" },
+              ]}
+            />
+          </Tooltip>
 
           <Tooltip title="文字颜色">
             <ColorPicker
@@ -286,21 +423,22 @@ const RichTextEditor = ({ value, onChange }: any) => {
             active={editor.isActive("link")}
           />
           <ToolButton
-            title="上传图片"
-            icon={<PictureOutlined />}
-            onClick={() => fileInputRef.current?.click()}
+            title={uploading ? "上传中..." : "上传图片"}
+            icon={uploading ? <LoadingOutlined /> : <PictureOutlined />}
+            onClick={() => !uploading && fileInputRef.current?.click()}
           />
           <input
             type="file"
             ref={fileInputRef}
             hidden
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleImageUpload}
+            disabled={uploading}
           />
 
           <Popover
             content={
-              <Space orientation="vertical">
+              <Space direction="vertical">
                 <Button
                   size="small"
                   block
