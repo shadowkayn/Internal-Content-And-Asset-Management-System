@@ -20,7 +20,6 @@ import { SidebarMenu } from "@/components/SidebarMenu";
 import React, { useEffect, useState } from "react";
 import { logoutAction } from "@/actions/auth.actions";
 import { usePathname, useRouter } from "next/dist/client/components/navigation";
-import { MenuConfig } from "@/constants/menu";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -62,21 +61,34 @@ export function AdminLayout({
     }
   };
 
-  // 动态生成面包屑
+  // 动态生成面包屑（基于 initialMenu）
   const getBreadcrumbItems = () => {
     const items: { title: React.ReactNode; href?: string }[] = [
       { title: "首页" },
     ];
 
-    // 1. 将 pathname 拆分为片段，例如 /admin/contents/preview/123 -> ['admin', 'contents', 'preview', '123']
+    // 调试：打印 initialMenu 结构（开发环境）
+    if (process.env.NODE_ENV === 'development' && initialMenu) {
+      console.log('🔍 initialMenu:', JSON.stringify(initialMenu, null, 2));
+      console.log('🔍 current pathname:', pathname);
+    }
+
+    // 1. 将 pathname 拆分为片段
     const snippets = pathname.split("/").filter(Boolean);
 
-    // 2. 递归查找 MenuConfig 中的 label
-    const findLabelInConfig = (key: string, config: any[]): string | null => {
-      for (const item of config) {
-        if (item.key === key) return item.label;
+    // 2. 递归查找 initialMenu 中的 label（兼容 key 和 path 字段）
+    const findLabelInMenu = (targetPath: string, menuData: any[]): string | null => {
+      if (!menuData) return null;
+      for (const item of menuData) {
+        // 兼容 key 和 path 两种字段名
+        const itemPath = item.key || item.path;
+        if (itemPath === targetPath) {
+          const label = item.label || item.name || item.title;
+          console.log(`✅ Found match: ${targetPath} -> ${label}`);
+          return label;
+        }
         if (item.children) {
-          const found = findLabelInConfig(key, item.children);
+          const found = findLabelInMenu(targetPath, item.children);
           if (found) return found;
         }
       }
@@ -88,19 +100,16 @@ export function AdminLayout({
     snippets.forEach((snippet, index) => {
       currentPath += `/${snippet}`;
 
-      // 跳过根路径 /admin 本身（如果你不需要显示“后台”这一级的话）
+      // 跳过根路径 /admin 本身
       if (currentPath === "/admin") return;
 
-      const label = findLabelInConfig(currentPath, MenuConfig);
+      const label = findLabelInMenu(currentPath, initialMenu || []);
 
       if (label) {
-        // 如果在配置里找到了，直接添加
         items.push({ title: label });
       } else {
-        // 如果没找到，判断是否是动态 ID (比如 MongoDB ID 长度通常为 24)
-        // 或者判断是否是最后一段路径
+        // 如果没找到，判断是否是最后一段路径
         if (index === snippets.length - 1) {
-          // 如果上一级是 preview，这里可以显示为“详情”
           const isDetail =
             snippets[index - 1] === "preview" || snippets[index - 1] === "list";
           items.push({ title: isDetail ? "详情" : snippet });
@@ -204,7 +213,7 @@ export function AdminLayout({
           theme="light"
           width={220}
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.1)", // 极高透明度
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
             backdropFilter: "blur(30px)",
             borderRight: "none",
             boxShadow: "10px 0 30px rgba(0,0,0,0.01)",
@@ -251,7 +260,7 @@ export function AdminLayout({
 
       <style jsx global>{`
         .ant-layout-sider-trigger {
-          background: rgba(255, 255, 255, 0.1) !important; /* 设为极淡的透明 */
+          background: rgba(255, 255, 255, 0.1) !important;
           backdrop-filter: blur(10px);
           border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
           color: #6366f1 !important;
@@ -259,7 +268,7 @@ export function AdminLayout({
         }
 
         .ant-layout-sider-trigger:hover {
-          background: rgba(255, 255, 255, 0.2) !important; /* 悬浮时变亮 */
+          background: rgba(255, 255, 255, 0.2) !important;
           color: #a855f7 !important;
         }
 

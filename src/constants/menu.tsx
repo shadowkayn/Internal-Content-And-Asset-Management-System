@@ -6,6 +6,18 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 
+/**
+ * ⚠️ 注意：此配置文件已废弃，仅作为参考
+ * 
+ * 菜单配置已改为动态获取，通过后端接口返回 initialMenu
+ * 请在数据库的权限管理模块中配置菜单
+ * 
+ * 如需添加新菜单，请：
+ * 1. 在数据库中添加权限配置
+ * 2. 创建对应的页面路由
+ * 3. 确保权限验证正确
+ */
+
 export const MenuConfig = [
   {
     key: "/admin/dashboard",
