@@ -32,6 +32,7 @@ interface ContentModalProps {
   isModalOpen: boolean;
   isEditMode: boolean;
   editItem: ContentItem | null;
+  initValues?: ContentItem | null;
   onClose: () => void;
   onSuccessCallback: () => void;
 }
@@ -42,6 +43,7 @@ export default function ContentModal({
   editItem,
   onClose,
   onSuccessCallback,
+  initValues = null,
 }: ContentModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -52,7 +54,7 @@ export default function ContentModal({
       if (isEditMode && editItem) {
         form.setFieldsValue(editItem);
       } else {
-        form.setFieldsValue(null);
+        form.setFieldsValue(initValues);
       }
     }
   }, [isModalOpen]);
