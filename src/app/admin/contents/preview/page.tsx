@@ -115,7 +115,32 @@ export default function ContentsPreviewPage() {
   };
 
   return (
-    <div style={{ padding: "0 8px" }}>
+    <div style={{ padding: "0 8px", position: "relative", minHeight: "70vh" }}>
+      {/* 全局 Loading 遮罩 */}
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(255, 255, 255, 0.8)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+            borderRadius: 12,
+          }}
+        >
+          <Space direction="vertical" align="center" size="large">
+            <div className="loading-spinner" />
+            <Text type="secondary">加载中...</Text>
+          </Space>
+        </div>
+      )}
+
       {/* 顶部工具栏：搜索与筛选 */}
       <Card
         style={{
@@ -187,7 +212,6 @@ export default function ContentsPreviewPage() {
                 }
               >
                 <Card
-                  loading={loading}
                   hoverable
                   cover={
                     <div
@@ -269,8 +293,6 @@ export default function ContentsPreviewPage() {
           ))
         ) : (
           <Col span={24}>
-            {" "}
-            {/* 使用 Col 包裹 */}
             <div style={{ margin: "204px 0", textAlign: "center" }}>
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -293,11 +315,13 @@ export default function ContentsPreviewPage() {
         {dataSource.length > 0 && (
           <Pagination
             current={pagination.current}
+            pageSize={pagination.pageSize}
             total={pagination.total}
             showSizeChanger={false}
             showTotal={(total) => `共${total}条数据`}
             onChange={(page) => {
-              loadListData(page).then();
+              setPagination((prev) => ({ ...prev, current: page }));
+              loadListData(page);
             }}
           />
         )}
@@ -307,6 +331,22 @@ export default function ContentsPreviewPage() {
       <style jsx>{`
         .search-card-box .ant-card-body {
           padding-bottom: 0;
+        }
+
+        /* Loading 动画 */
+        .loading-spinner {
+          width: 48px;
+          height: 48px;
+          border: 4px solid rgba(99, 102, 241, 0.1);
+          border-top-color: #6366f1;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>
