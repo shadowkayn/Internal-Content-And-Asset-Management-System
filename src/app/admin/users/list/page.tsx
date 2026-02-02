@@ -79,11 +79,10 @@ export default function UserListPage() {
 
         if (res.success) {
           setDataSource(res.result.list as any);
-          setPagination((prev) => {
-            return {
-              ...prev,
-              total: res.result.total,
-            };
+          setPagination({
+            current: current,
+            pageSize: pageSize,
+            total: res.result.total,
           });
         } else {
           message.error("获取数据失败");
@@ -292,11 +291,11 @@ export default function UserListPage() {
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条记录`,
             onChange: (page, pageSize) => {
-              setPagination((prev) => ({
-                ...prev,
+              setPagination({
                 current: page,
-                pageSize: pageSize || prev.pageSize,
-              }));
+                pageSize: pageSize || pagination.pageSize,
+                total: pagination.total,
+              });
             },
           }}
         />

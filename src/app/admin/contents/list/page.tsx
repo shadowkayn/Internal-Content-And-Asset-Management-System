@@ -78,10 +78,11 @@ export default function ContentListPage() {
       const res: any = await getArticleListAction(params);
       if (res.success) {
         setDataSource(res.data.list);
-        setPagination((prev) => ({
-          ...prev,
+        setPagination({
+          current: page,
+          pageSize: pageSize,
           total: res.data.total || 0,
-        }));
+        });
       } else {
         message.error(res.error || "获取数据失败");
       }

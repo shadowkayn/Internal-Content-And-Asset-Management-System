@@ -91,10 +91,11 @@ export default function DictManagementPage() {
       const result = await getDictListAction(params);
       if (result.success) {
         setDataSource(result.list || []);
-        setPagination((prev) => ({
-          ...prev,
+        setPagination({
+          current: page,
+          pageSize: pageSize,
           total: result.total || 0,
-        }));
+        });
       } else {
         message.error(result.error || "获取数据失败");
       }
@@ -373,11 +374,11 @@ export default function DictManagementPage() {
             showQuickJumper: true,
             showSizeChanger: true,
             onChange: (page, pageSize) => {
-              setPagination((prev) => ({
-                ...prev,
+              setPagination({
                 current: page,
-                pageSize: pageSize || prev.pageSize,
-              }));
+                pageSize: pageSize || pagination.pageSize,
+                total: pagination.total,
+              });
             },
           }}
         />

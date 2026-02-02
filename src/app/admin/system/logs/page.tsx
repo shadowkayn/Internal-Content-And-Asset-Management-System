@@ -59,11 +59,10 @@ export default function SystemLogsPage() {
       const res = await getLogListAction(query);
       if (res.success) {
         setDataSource((res.data?.list as any) || []);
-        setPagination((prev) => {
-          return {
-            ...prev,
-            total: res.data.total,
-          };
+        setPagination({
+          current: current,
+          pageSize: pageSize,
+          total: res.data.total,
         });
       } else {
         message.error(res.error || "查询失败");
@@ -240,11 +239,11 @@ export default function SystemLogsPage() {
             showQuickJumper: true,
             showSizeChanger: true,
             onChange: (page, pageSize) => {
-              setPagination((prev) => ({
-                ...prev,
+              setPagination({
                 current: page,
-                pageSize: pageSize || prev.pageSize,
-              }));
+                pageSize: pageSize || pagination.pageSize,
+                total: pagination.total,
+              });
             },
           }}
         />

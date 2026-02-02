@@ -96,10 +96,11 @@ export default function ContentsPreviewPage() {
           };
         });
         setDataSource(result);
-        setPagination((prev) => ({
-          ...prev,
+        setPagination({
+          current: page,
+          pageSize: pageSize,
           total: res.data.total || 0,
-        }));
+        });
       } else {
         message.error(res.error || "获取数据失败");
       }
@@ -320,7 +321,6 @@ export default function ContentsPreviewPage() {
             showSizeChanger={false}
             showTotal={(total) => `共${total}条数据`}
             onChange={(page) => {
-              setPagination((prev) => ({ ...prev, current: page }));
               loadListData(page);
             }}
           />
