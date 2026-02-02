@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { marked } from "marked";
 import ReactMarkdown from "react-markdown";
 import {
@@ -40,6 +40,8 @@ const { Panel } = Collapse;
 export default function AICreatorPage() {
   const [messageApi, contextHolder] = message.useMessage();
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null); // 新增：用于内容区域
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState({
     topic: "",
@@ -53,6 +55,18 @@ export default function AICreatorPage() {
   const [generatedRaw, setGeneratedRaw] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
+
+  // 自动滚动到底部（流式生成时实时跟随）
+  useEffect(() => {
+    if (scrollContainerRef.current && generatedRaw) {
+      // 使用 requestAnimationFrame 确保 DOM 更新后再滚动
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [generatedRaw]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedRaw);
@@ -341,7 +355,8 @@ export default function AICreatorPage() {
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              overflowY: "scroll",
+              overflowY: "auto",
+              padding: 0,
             },
           }}
           extra={
@@ -369,62 +384,66 @@ export default function AICreatorPage() {
             </Space>
           }
         >
-          {generatedRaw ? (
-            <div className={styles.previewPaper}>
-              <div className={styles.markdownBody}>
-                <ReactMarkdown>{generatedRaw}</ReactMarkdown>
-                {loading && <span className={styles.cursor} />}
-              </div>
-            </div>
-          ) : (
-            <div
-              style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <RobotOutlined className={styles.emptyIcon} />
-              <Title level={5} type="secondary">
-                AI 创作空间
-              </Title>
-              <Text type="secondary">在左侧设置参数，开启你的灵感之旅</Text>
-            </div>
-          )}
+          <div ref={scrollContainerRef} style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+            {generatedRaw ? (
+              <>
+                <div ref={contentRef} className={styles.previewPaper}>
+                  <div className={styles.markdownBody}>
+                    <ReactMarkdown>{generatedRaw}</ReactMarkdown>
+                    {loading && <span className={styles.cursor} />}
+                  </div>
+                </div>
 
-          {generatedRaw && !loading && (
-            <div
-              style={{
-                borderTop: "1px solid #f0f0f0",
-                paddingTop: 16,
-                marginTop: 16,
-                textAlign: "right",
-              }}
-            >
-              <Space>
-                <Button
-                  size="large"
-                  onClick={() => {
-                    setGeneratedRaw("");
-                    handleGenerate().then();
-                  }}
-                >
-                  不满意，重写
-                </Button>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<CheckCircleOutlined />}
-                  onClick={handleUseContent}
-                  style={{ background: "#52c41a", borderColor: "#52c41a" }}
-                >
-                  预览满意，创建文章
-                </Button>
-              </Space>
-            </div>
-          )}
+                {!loading && (
+                  <div
+                    style={{
+                      borderTop: "1px solid #f0f0f0",
+                      paddingTop: 16,
+                      marginTop: 16,
+                      textAlign: "right",
+                    }}
+                  >
+                    <Space>
+                      <Button
+                        size="large"
+                        onClick={() => {
+                          setGeneratedRaw("");
+                          handleGenerate().then();
+                        }}
+                      >
+                        不满意，重写
+                      </Button>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<CheckCircleOutlined />}
+                        onClick={handleUseContent}
+                        style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                      >
+                        预览满意，创建文章
+                      </Button>
+                    </Space>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <RobotOutlined className={styles.emptyIcon} />
+                <Title level={5} type="secondary">
+                  AI 创作空间
+                </Title>
+                <Text type="secondary">在左侧设置参数，开启你的灵感之旅</Text>
+              </div>
+            )}
+          </div>
         </Card>
       </div>
 
