@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { marked } from "marked";
+import ReactMarkdown from "react-markdown";
 import {
   Card,
   Input,
@@ -26,13 +27,14 @@ import {
   ColumnWidthOutlined,
   FileTextOutlined,
   BulbOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 
 import styles from "./index.module.css";
 import AddContentModal from "../list/components/ContentModal";
 
 const { TextArea } = Input;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { Panel } = Collapse;
 
 export default function AICreatorPage() {
@@ -51,6 +53,11 @@ export default function AICreatorPage() {
   const [generatedRaw, setGeneratedRaw] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedRaw);
+    messageApi.success("内容已复制到剪贴板");
+  };
 
   const handleGenerate = async () => {
     if (!config.topic) {
@@ -76,8 +83,9 @@ export default function AICreatorPage() {
 
         【格式严格要求】
         1. 第一行必须是文章标题，以 "# " 开头。
-        2. 正文使用标准的 Markdown 格式。
-        3. 内容分段清晰，使用二级标题 (##) 组织结构。
+        2. 第二行必须是文章的简要描述（用于列表展示，50-100字），以 "> 描述：" 开头。
+        3. 从第三行开始是正文，使用标准的 Markdown 格式。
+        4. 内容分段清晰，使用二级标题 (##) 组织结构。
       `;
 
       console.log("Prompt:", fullPrompt); // 调试用
@@ -110,21 +118,37 @@ export default function AICreatorPage() {
 
   const handleUseContent = async () => {
     if (!generatedRaw) return;
+
     const lines = generatedRaw.split("\n");
     let title = config.topic;
-    let bodyMarkdown = generatedRaw;
-    const firstHeadingIndex = lines.findIndex((line) =>
-      line.trim().startsWith("# "),
-    );
-    if (firstHeadingIndex !== -1) {
-      title = lines[firstHeadingIndex].replace("# ", "").trim();
-      bodyMarkdown = lines
-        .filter((_, index) => index !== firstHeadingIndex)
-        .join("\n")
-        .trim();
+    let description = "";
+    const bodyLines = [...lines];
+
+    // 提取并移除标题行
+    const titleIndex = bodyLines.findIndex((l) => l.trim().startsWith("# "));
+    if (titleIndex !== -1) {
+      title = bodyLines[titleIndex].replace("# ", "").trim();
+      bodyLines.splice(titleIndex, 1);
     }
+
+    // 提取并移除描述行
+    const descIndex = bodyLines.findIndex((l) =>
+      l.trim().startsWith("> 描述："),
+    );
+    if (descIndex !== -1) {
+      description = bodyLines[descIndex].replace("> 描述：", "").trim();
+      bodyLines.splice(descIndex, 1);
+    }
+
+    // 组合剩余内容为正文
+    const bodyMarkdown = bodyLines.join("\n").trim();
     const htmlContent = await marked.parse(bodyMarkdown);
-    setModalData({ title: title, content: htmlContent as string });
+
+    setModalData({
+      title: title,
+      description: description,
+      content: htmlContent as string,
+    });
     setIsModalOpen(true);
   };
 
@@ -307,20 +331,38 @@ export default function AICreatorPage() {
           variant={"borderless"}
           style={{ height: "100%", display: "flex", flexDirection: "column" }}
           styles={{
+            header: {
+              zIndex: 1,
+              backdropFilter: "blur(20px)",
+              position: "sticky",
+              backgroundColor: "rgba(255, 255, 255, 0.8)",
+            },
             body: {
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden",
+              overflowY: "scroll",
             },
           }}
           extra={
             <Space>
-              {generatedRaw && <Tag color="blue">{generatedRaw.length} 字</Tag>}
-              <Tooltip title="清空内容">
+              {generatedRaw && (
+                <Tag color="processing">{generatedRaw.length} 字</Tag>
+              )}
+              {generatedRaw && (
+                <Tooltip title="复制内容">
+                  <Button
+                    type="text"
+                    icon={<CopyOutlined />}
+                    onClick={copyToClipboard}
+                  />
+                </Tooltip>
+              )}
+              <Tooltip title="清空">
                 <Button
+                  type="text"
+                  danger
                   icon={<DeleteOutlined />}
-                  disabled={!generatedRaw || loading}
                   onClick={() => setGeneratedRaw("")}
                 />
               </Tooltip>
@@ -328,22 +370,30 @@ export default function AICreatorPage() {
           }
         >
           {generatedRaw ? (
-            <div className={styles.previewContent}>{generatedRaw}</div>
+            <div className={styles.previewPaper}>
+              <div className={styles.markdownBody}>
+                <ReactMarkdown>{generatedRaw}</ReactMarkdown>
+                {loading && <span className={styles.cursor} />}
+              </div>
+            </div>
           ) : (
             <div
               style={{
                 height: "100%",
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
-                flexDirection: "column",
-                color: "#ccc",
               }}
             >
-              <RobotOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-              <Text type="secondary">配置左侧参数，AI 帮你搞定文章</Text>
+              <RobotOutlined className={styles.emptyIcon} />
+              <Title level={5} type="secondary">
+                AI 创作空间
+              </Title>
+              <Text type="secondary">在左侧设置参数，开启你的灵感之旅</Text>
             </div>
           )}
+
           {generatedRaw && !loading && (
             <div
               style={{
@@ -354,12 +404,21 @@ export default function AICreatorPage() {
               }}
             >
               <Space>
-                <Button onClick={() => setGeneratedRaw("")}>重写</Button>
+                <Button
+                  size="large"
+                  onClick={() => {
+                    setGeneratedRaw("");
+                    handleGenerate().then();
+                  }}
+                >
+                  不满意，重写
+                </Button>
                 <Button
                   type="primary"
+                  size="large"
                   icon={<CheckCircleOutlined />}
-                  style={{ backgroundColor: "#52c41a" }}
                   onClick={handleUseContent}
+                  style={{ background: "#52c41a", borderColor: "#52c41a" }}
                 >
                   预览满意，创建文章
                 </Button>
@@ -375,9 +434,10 @@ export default function AICreatorPage() {
         editItem={null}
         initValues={modalData}
         onClose={() => setIsModalOpen(false)}
+        showMessage={false}
         onSuccessCallback={() => {
           setIsModalOpen(false);
-          message.success("🎉 文章已成功创建！");
+          messageApi.success("🎉 文章已成功创建！");
         }}
       />
     </div>

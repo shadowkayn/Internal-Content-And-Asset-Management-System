@@ -33,6 +33,7 @@ interface ContentModalProps {
   isEditMode: boolean;
   editItem: ContentItem | null;
   initValues?: ContentItem | null;
+  showMessage?: boolean;
   onClose: () => void;
   onSuccessCallback: () => void;
 }
@@ -44,6 +45,7 @@ export default function ContentModal({
   onClose,
   onSuccessCallback,
   initValues = null,
+  showMessage = true,
 }: ContentModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,9 @@ export default function ContentModal({
         res = await createContentAction(values);
       }
       if (res.success) {
-        message.success(isEditMode ? "更新成功" : "新增成功");
+        if (showMessage) {
+          message.success(isEditMode ? "更新成功" : "新增成功");
+        }
         onSuccessCallback();
       } else {
         message.error(res.error || (isEditMode ? "更新失败" : "新增失败"));

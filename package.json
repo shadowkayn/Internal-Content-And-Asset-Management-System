@@ -51,6 +51,7 @@
     "prettier": "^3.7.4",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-markdown": "^10.1.0",
     "resend": "^6.6.0",
     "sass": "^1.97.2",
     "svg-captcha": "^1.4.0",

@@ -4,7 +4,7 @@ import OpenAI from "openai";
 // 这样可以完全掌控 API 地址，不会被 SDK 乱改
 const client = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: "https://api.siliconflow.cn/v1", // 硅基流动 官方标准地址 "https://cloud.siliconflow.cn/me/account/ak"
+  baseURL: "https://open.bigmodel.cn/api/paas/v4/", // 智谱 AI 的官方地址
 });
 
 export const runtime = "edge";
@@ -27,8 +27,8 @@ export async function POST(req: Request) {
 
     // 发起请求 (原生写法)
     const response = await client.chat.completions.create({
-      // 免费且好用的模型: "deepseek-ai/DeepSeek-V3" 或者 "Qwen/Qwen2.5-7B-Instruct"
-      model: "deepseek-ai/DeepSeek-V3",
+      // 智谱最推荐的免费/高性能模型
+      model: "glm-4-flash",
       messages: [
         {
           role: "system",
