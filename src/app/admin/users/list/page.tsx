@@ -93,12 +93,12 @@ export default function UserListPage() {
         setLoading(false);
       }
     },
-    [pagination.current, pagination.pageSize],
+    [],
   );
 
   useEffect(() => {
-    fetchData().then();
-  }, [fetchData]);
+    fetchData();
+  }, []);
 
   const handleDelete = async (id: string) => {
     const ids = [id];
@@ -291,11 +291,7 @@ export default function UserListPage() {
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条记录`,
             onChange: (page, pageSize) => {
-              setPagination({
-                current: page,
-                pageSize: pageSize || pagination.pageSize,
-                total: pagination.total,
-              });
+              fetchData(page, pageSize);
             },
           }}
         />

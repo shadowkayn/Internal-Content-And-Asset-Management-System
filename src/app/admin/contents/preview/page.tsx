@@ -135,7 +135,7 @@ export default function ContentsPreviewPage() {
             borderRadius: 12,
           }}
         >
-          <Space direction="vertical" align="center" size="large">
+          <Space orientation="vertical" align="center" size="large">
             <div className="loading-spinner" />
             <Text type="secondary">加载中...</Text>
           </Space>

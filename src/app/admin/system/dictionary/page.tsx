@@ -76,49 +76,48 @@ export default function DictManagementPage() {
   };
   const [dataForm] = Form.useForm();
 
-  const getDictList = useCallback(async () => {
-    const { dictName, dictType } = searchForm.getFieldsValue();
-    const { current: page, pageSize } = pagination;
-    const params = {
-      dictName,
-      dictType,
-      page,
-      pageSize,
-    };
-    setTableLoading(true);
+  const getDictList = useCallback(
+    async (page?: number, size?: number) => {
+      const { dictName, dictType } = searchForm.getFieldsValue();
+      const current = page || pagination.current;
+      const pageSize = size || pagination.pageSize;
+      const params = {
+        dictName,
+        dictType,
+        page: current,
+        pageSize,
+      };
+      setTableLoading(true);
 
-    try {
-      const result = await getDictListAction(params);
-      if (result.success) {
-        setDataSource(result.list || []);
-        setPagination({
-          current: page,
-          pageSize: pageSize,
-          total: result.total || 0,
-        });
-      } else {
-        message.error(result.error || "获取数据失败");
+      try {
+        const result = await getDictListAction(params);
+        if (result.success) {
+          setDataSource(result.list || []);
+          setPagination({
+            current: current,
+            pageSize: pageSize,
+            total: result.total || 0,
+          });
+        } else {
+          message.error(result.error || "获取数据失败");
+        }
+      } catch (e) {
+        message.error("获取数据失败");
+      } finally {
+        setTableLoading(false);
       }
-    } catch (e) {
-      message.error("获取数据失败");
-    } finally {
-      setTableLoading(false);
-    }
-  }, [searchForm, pagination.current, pagination.pageSize]);
+    },
+    [searchForm],
+  );
 
   const resetDictList = () => {
     searchForm.resetFields();
-    setPagination((prev) => ({
-      ...prev,
-      current: 1,
-      pageSize: 10,
-    }));
-    getDictList();
+    getDictList(1, 10);
   };
 
   useEffect(() => {
     getDictList();
-  }, [getDictList]);
+  }, []);
 
   const handleDelete = async (id: string) => {
     const ids = [id];
@@ -322,7 +321,7 @@ export default function DictManagementPage() {
               <Input placeholder="请输入字典类型" style={{ width: 200 }} />
             </Form.Item>
             <Button
-              onClick={getDictList}
+              onClick={() => getDictList(1)}
               type="primary"
               icon={<SearchOutlined />}
             >
@@ -374,11 +373,7 @@ export default function DictManagementPage() {
             showQuickJumper: true,
             showSizeChanger: true,
             onChange: (page, pageSize) => {
-              setPagination({
-                current: page,
-                pageSize: pageSize || pagination.pageSize,
-                total: pagination.total,
-              });
+              getDictList(page, pageSize);
             },
           }}
         />

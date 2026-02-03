@@ -27,24 +27,23 @@ export class LogServer {
       query.operator = username;
     }
 
-    const [list, total] = await Promise.all([
-      LogModel.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(pageSize)
-        .lean()
-        .transform((doc) => {
-          return doc.map((item: any) => ({
-            ...item,
-            id: item._id.toString(),
-            _id: undefined,
-            createdAt: item.createdAt?.toLocaleString("zh-CN"),
-            updatedAt: item.updatedAt?.toLocaleString("zh-CN"),
-          }));
-        }),
-      LogModel.countDocuments(query),
-    ]);
+    const list = await LogModel.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .lean();
 
-    return { list, total };
+    const total = await LogModel.countDocuments(query);
+
+    return {
+      list: list.map((item: any) => ({
+        ...item,
+        id: item._id.toString(),
+        _id: undefined,
+        createdAt: item.createdAt?.toLocaleString("zh-CN"),
+        updatedAt: item.updatedAt?.toLocaleString("zh-CN"),
+      })),
+      total,
+    };
   }
 }

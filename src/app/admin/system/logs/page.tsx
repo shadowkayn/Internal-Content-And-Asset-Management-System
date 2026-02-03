@@ -36,14 +36,15 @@ export default function SystemLogsPage() {
     pageSize: 10,
     total: 0,
   });
-  const [dataSource, setDataSource] = useState([]);
+  const [dataSource, setDataSource] = useState<any>([]);
 
   useEffect(() => {
-    fetchData().then();
-  }, [pagination.current, pagination.pageSize]);
+    fetchData();
+  }, []);
 
-  const fetchData = async () => {
-    const { current, pageSize } = pagination;
+  const fetchData = async (page?: number, size?: number) => {
+    const current = page || pagination.current;
+    const pageSize = size || pagination.pageSize;
     const { moduleName, username, date } = form.getFieldsValue();
     const [start, end] = date || [];
     const query = {
@@ -54,11 +55,13 @@ export default function SystemLogsPage() {
       startTime: start ? start.format("YYYY-MM-DD") : undefined,
       endTime: end ? end.format("YYYY-MM-DD") : undefined,
     };
+
     try {
       setLoading(true);
       const res = await getLogListAction(query);
+
       if (res.success) {
-        setDataSource((res.data?.list as any) || []);
+        setDataSource(res.data?.list || []);
         setPagination({
           current: current,
           pageSize: pageSize,
@@ -68,7 +71,6 @@ export default function SystemLogsPage() {
         message.error(res.error || "查询失败");
       }
     } catch (e: any) {
-      console.error(e.message);
       message.error(e.message || "查询失败");
     } finally {
       setLoading(false);
@@ -188,7 +190,7 @@ export default function SystemLogsPage() {
             <Button
               type="primary"
               icon={<SearchOutlined />}
-              onClick={fetchData}
+              onClick={() => fetchData()}
             >
               查询
             </Button>
@@ -196,14 +198,7 @@ export default function SystemLogsPage() {
               icon={<ReloadOutlined />}
               onClick={() => {
                 form.resetFields();
-                setPagination((prev) => {
-                  return {
-                    ...prev,
-                    current: 1,
-                    pageSize: 10,
-                  };
-                });
-                fetchData().then();
+                fetchData(1, 10);
               }}
             >
               重置
@@ -238,12 +233,9 @@ export default function SystemLogsPage() {
             total: pagination.total,
             showQuickJumper: true,
             showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setPagination({
-                current: page,
-                pageSize: pageSize || pagination.pageSize,
-                total: pagination.total,
-              });
+              fetchData(page, pageSize);
             },
           }}
         />
@@ -270,7 +262,7 @@ export default function SystemLogsPage() {
             <Descriptions.Item label="耗时">
               <Tag color="orange">{selectedLog.duration}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="请求参数" style={{}}>
+            <Descriptions.Item label="请求参数">
               <pre
                 style={{
                   background: "#f8fafc",
