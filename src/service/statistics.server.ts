@@ -11,7 +11,10 @@ export class StatisticsServer {
       ContentModel.countDocuments(),
       UserModel.countDocuments(),
       Math.round(Math.random() * 1000),
-      Math.round(Math.random() * 100),
+      ContentModel.countDocuments({
+        status: "pending",
+        deleteFlag: 0,
+      }),
     ]);
 
     return {
