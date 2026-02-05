@@ -25,8 +25,10 @@ import {
 } from "@/actions/auth.actions";
 import { motion } from "framer-motion";
 import AnimeBackground from "@/app/auth/login/cpmponents/AuroraBackground";
+import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
+  const router = useRouter();
   // 获取表单实例
   const [loginForm] = Form.useForm();
   const [registerForm] = Form.useForm();
@@ -91,11 +93,11 @@ export default function AuthPage() {
     setBtnLoading(true);
 
     loginAction(formData)
-      .then((res) => {
+      .then((res: any) => {
         if (res.success) {
           message.success("登录成功");
           loginForm.resetFields();
-          window.location.href = "/admin/dashboard";
+          router.replace("/admin/dashboard");
         } else {
           message.error(res.error || "登录失败");
           // 自动刷新验证码
@@ -118,7 +120,7 @@ export default function AuthPage() {
     });
     setBtnLoading(true);
     registerAction(formData)
-      .then((res) => {
+      .then((res: any) => {
         if (res.success) {
           message.success("注册成功");
           // 清空表单，跳转登录tab

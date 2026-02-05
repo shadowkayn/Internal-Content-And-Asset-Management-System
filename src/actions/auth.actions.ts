@@ -15,8 +15,7 @@ export async function sendEmailVerificationCodeAction(email: string) {
 //  loginFunc
 export async function loginAction(formData: FormData) {
   try {
-    await AuthServer.login(formData);
-    return { success: true };
+    return await AuthServer.login(formData);
   } catch (e) {
     console.error("Login Error:", e);
     return { error: "系统登录异常，请稍后再试" };
@@ -36,8 +35,8 @@ export async function logoutAction() {
 // signupFunc
 export async function registerAction(formData: FormData) {
   try {
-    await AuthServer.register(formData);
-    return { success: true };
+    const result = await AuthServer.register(formData);
+    return result || { success: true };
   } catch (e) {
     return { error: "注册失败" };
   }

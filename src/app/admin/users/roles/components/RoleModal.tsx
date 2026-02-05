@@ -33,6 +33,7 @@ const RoleModal = ({
   const [loading, setLoading] = useState(false);
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
   const [permissionTree, setPermissionTree] = useState<any[]>([]);
+  const [flatPermissions, setFlatPermissions] = useState<any[]>([]); // 扁平化的权限列表
 
   useEffect(() => {
     if (isModalOpen) {
@@ -45,7 +46,11 @@ const RoleModal = ({
           ...editingRole,
           status: editingRole.status === "active",
         });
-        setCheckedKeys(editingRole?.permissions || []);
+        // 延迟设置权限，等待权限树加载完成
+        setTimeout(() => {
+          const filteredKeys = filterParentKeys(editingRole?.permissions || []);
+          setCheckedKeys(filteredKeys);
+        }, 100);
       } else {
         form.setFieldsValue(null);
       }
@@ -57,7 +62,11 @@ const RoleModal = ({
       setLoading(true);
       const res: any = await getPermissionListAction();
       if (res.success) {
-        const treeData = convertPermissionData(res.data?.list || []);
+        const permissions = res.data?.list || [];
+        // 扁平化权限数据
+        const flat = flattenPermissions(permissions);
+        setFlatPermissions(flat);
+        const treeData = convertPermissionData(permissions);
         setPermissionTree(treeData);
       } else {
         message.error(res.message || "获取权限树失败");
@@ -67,6 +76,21 @@ const RoleModal = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  // 扁平化权限树
+  const flattenPermissions = (permissions: any[]): any[] => {
+    const result: any[] = [];
+    const flatten = (perms: any[]) => {
+      perms.forEach((perm) => {
+        result.push(perm);
+        if (perm.children && perm.children.length > 0) {
+          flatten(perm.children);
+        }
+      });
+    };
+    flatten(permissions);
+    return result;
   };
 
   // 转换权限数据为 Tree 组件所需格式
@@ -80,6 +104,57 @@ const RoleModal = ({
     }));
   };
 
+  // 添加所有父级权限（仅在提交时使用）
+  const addParentCodes = (codes: string[]): string[] => {
+    const result = new Set<string>(codes);
+
+    codes.forEach((code) => {
+      // 找到当前权限
+      const current = flatPermissions.find((p) => p.code === code);
+      if (current && current.parentId) {
+        // 找到父级权限
+        const parent = flatPermissions.find((p) => p.code === current.parentId);
+        if (parent) {
+          result.add(parent.code);
+          // 递归添加父级的父级
+          const parentCodes = addParentCodes([parent.code]);
+          parentCodes.forEach((pc) => result.add(pc));
+        }
+      }
+    });
+
+    return Array.from(result);
+  };
+
+  // 过滤父节点：如果父节点的所有子节点都被选中，保留父节点；否则移除父节点，只保留子节点
+  const filterParentKeys = (codes: string[]): string[] => {
+    const result = new Set<string>(codes);
+
+    codes.forEach((code) => {
+      const current = flatPermissions.find((p) => p.code === code);
+      if (current) {
+        // 找到该节点的所有子节点
+        const children = flatPermissions.filter(
+          (p) => p.parentId === current.code,
+        );
+
+        if (children.length > 0) {
+          // 检查是否所有子节点都被选中
+          const allChildrenSelected = children.every((child) =>
+            codes.includes(child.code),
+          );
+
+          // 如果不是所有子节点都被选中，移除父节点
+          if (!allChildrenSelected) {
+            result.delete(code);
+          }
+        }
+      }
+    });
+
+    return Array.from(result);
+  };
+
   const onSubmit = async () => {
     await form.validateFields();
 
@@ -88,12 +163,16 @@ const RoleModal = ({
     try {
       setLoading(true);
       const { name, code, status, description } = form.getFieldsValue();
+
+      // 在提交时自动添加父级权限
+      const finalPermissions = addParentCodes(checkedKeys);
+
       const params = {
         name,
         code,
         status: status ? "active" : "disabled",
         description,
-        permissions: checkedKeys,
+        permissions: finalPermissions,
       };
 
       let res: any = null;

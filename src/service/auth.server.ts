@@ -111,6 +111,8 @@ export class AuthServer {
       sameSite: "strict",
       maxAge: remember ? 3 * 24 * 60 * 60 : 6 * 60 * 60, // 3天或6h
     });
+
+    return { success: true };
   }
 
   @Audit("用户认证", "POST", "用户登出")
@@ -176,5 +178,7 @@ export class AuthServer {
       secure: isProduction,
       sameSite: "strict",
     });
+
+    return { success: true };
   }
 }
