@@ -21,7 +21,6 @@ import {
   RiseOutlined,
   ArrowUpOutlined,
   BellOutlined,
-  CheckCircleOutlined,
 } from "@ant-design/icons";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -336,7 +335,10 @@ export default function DashboardPage() {
             }
             style={cardStyle}
             extra={
-              <Button type="link" onClick={() => router.push("/admin/system/logs")}>
+              <Button
+                type="link"
+                onClick={() => router.push("/admin/system/logs")}
+              >
                 查看全部
               </Button>
             }
