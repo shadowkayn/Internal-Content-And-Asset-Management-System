@@ -146,6 +146,15 @@ export default function UserListPage() {
 
   const columns: ColumnsType<UserItem> = [
     {
+      title: "序号",
+      align: "center",
+      key: "index",
+      width: 80,
+      render: (_: any, __: any, index: number) => {
+        return (pagination.current - 1) * pagination.pageSize + index + 1;
+      },
+    },
+    {
       title: "用户名",
       align: "center",
       dataIndex: "username",

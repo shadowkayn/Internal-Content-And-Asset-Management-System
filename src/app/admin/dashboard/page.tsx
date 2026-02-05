@@ -24,12 +24,14 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import {
   getArticlesOfSevenDaysAction,
   getArticlesTypesAction,
   getStatisticsAction,
 } from "@/actions/dashboard.action";
+import { getLogListAction } from "@/actions/log.action";
 
 const { Title, Text } = Typography;
 
@@ -43,19 +45,22 @@ const Pie = dynamic(() => import("@ant-design/charts").then((mod) => mod.Pie), {
 });
 
 export default function DashboardPage() {
+  const router = useRouter();
   const userInfo = useCurrentUser();
   const [statistics, setStatistics] = useState<any>({});
   const [articles, setArticles] = useState<any>([]);
   const [articlesTypes, setArticlesTypes] = useState<any>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const getStatistics = useCallback(async () => {
     try {
       setLoading(true);
-      const [res1, res2, res3] = await Promise.allSettled([
+      const [res1, res2, res3, res4] = await Promise.allSettled([
         getStatisticsAction(),
         getArticlesOfSevenDaysAction(),
         getArticlesTypesAction(),
+        getLogListAction({ page: 1, pageSize: 5 }),
       ]);
       if (res1.status === "fulfilled" && res1.value.success) {
         setStatistics(res1.value.data);
@@ -65,6 +70,9 @@ export default function DashboardPage() {
       }
       if (res3.status === "fulfilled" && res3.value.success) {
         setArticlesTypes(res3.value.data);
+      }
+      if (res4.status === "fulfilled" && res4.value.success) {
+        setLogs(res4.value.data?.list || []);
       }
     } catch (e: any) {
       message.error(e.message || "查询失败");
@@ -327,65 +335,38 @@ export default function DashboardPage() {
               </Text>
             }
             style={cardStyle}
-            extra={<Button type="link">查看全部</Button>}
+            extra={
+              <Button type="link" onClick={() => router.push("/admin/system/logs")}>
+                查看全部
+              </Button>
+            }
           >
             <div style={{ padding: "10px 0" }}>
-              <Timeline
-                items={[
-                  {
-                    color: "green",
-                    content: (
-                      <Space orientation={"vertical"} size={0}>
-                        <Text strong>
-                          凯隐 发布了新文章 《Next.js 16 实战指南》
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          10 分钟前 · 内容管理
-                        </Text>
-                      </Space>
-                    ),
-                  },
-                  {
-                    color: "blue",
-                    content: (
-                      <Space orientation="vertical" size={0}>
-                        <Text strong>
-                          管理员 更新了权限节点: system:dictionary
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          1 小时前 · 权限定义管理
-                        </Text>
-                      </Space>
-                    ),
-                  },
-                  {
-                    color: "gray",
-                    content: (
-                      <Space orientation="vertical" size={0}>
-                        <Text strong>系统 自动备份数据库成功</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          3 小时前 · 系统维护
-                        </Text>
-                      </Space>
-                    ),
-                  },
-                  {
-                    icon: (
-                      <CheckCircleOutlined
-                        style={{ fontSize: "16px", color: "#818cf8" }}
-                      />
-                    ),
-                    content: (
-                      <Space orientation="vertical" size={0}>
-                        <Text strong>新用户 zed_kayn 通过邀请链接注册</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          昨天 18:20 · 用户管理
-                        </Text>
-                      </Space>
-                    ),
-                  },
-                ]}
-              />
+              {logs.length > 0 ? (
+                <Timeline
+                  items={logs.map((log) => {
+                    const getColor = (status: string) => {
+                      return status === "success" ? "green" : "red";
+                    };
+
+                    return {
+                      color: getColor(log.status),
+                      content: (
+                        <Space orientation="vertical" size={0}>
+                          <Text strong>
+                            {log.operator} {log.description}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {log.createdAt} · {log.module}
+                          </Text>
+                        </Space>
+                      ),
+                    };
+                  })}
+                />
+              ) : (
+                <Text type="secondary">暂无最新动态</Text>
+              )}
             </div>
           </Card>
         </Col>

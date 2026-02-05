@@ -154,6 +154,15 @@ export default function ContentListPage() {
   // 表格列定义
   const columns: any = [
     {
+      title: "序号",
+      dataIndex: "index",
+      key: "index",
+      align: "center",
+      render: (text: string, record: any, index: number) => {
+        return (pagination.current - 1) * pagination.pageSize + index + 1;
+      },
+    },
+    {
       title: "封面",
       dataIndex: "cover",
       key: "cover",

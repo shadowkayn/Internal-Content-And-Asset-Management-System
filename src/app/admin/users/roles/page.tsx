@@ -136,6 +136,15 @@ export default function UserRolePage() {
 
   const columns: any = [
     {
+      title: "序号",
+      key: "index",
+      align: "center",
+      width: 80,
+      render: (_: any, __: any, index: number) => {
+        return (pagination.current - 1) * pagination.pageSize + index + 1;
+      },
+    },
+    {
       title: "角色名称",
       dataIndex: "name",
       key: "name",

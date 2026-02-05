@@ -79,6 +79,15 @@ export default function SystemLogsPage() {
 
   const columns: any = [
     {
+      title: "序号",
+      align: "center",
+      key: "index",
+      width: 80,
+      render: (_: any, __: any, index: number) => {
+        return (pagination.current - 1) * pagination.pageSize + index + 1;
+      },
+    },
+    {
       title: "日志编号",
       align: "center",
       dataIndex: "id",

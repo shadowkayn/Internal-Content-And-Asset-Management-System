@@ -166,7 +166,9 @@ export default function DictManagementPage() {
       key: "index",
       align: "center",
       width: 80,
-      render: (text: string, record: any, index: number) => index + 1,
+      render: (text: string, record: any, index: number) => {
+        return (pagination.current - 1) * pagination.pageSize + index + 1;
+      },
     },
     {
       title: "字典名称",
