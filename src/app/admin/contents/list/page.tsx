@@ -19,15 +19,21 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  CheckOutlined,
+  SendOutlined,
 } from "@ant-design/icons";
 import CommonSelect from "@/components/common/CommonSelect";
 import ContentModal from "@/app/admin/contents/list/components/ContentModal";
+import ReviewModal from "@/app/admin/contents/list/components/ReviewModal";
 import "./list.scss";
 import {
   deleteContentAction,
   getArticleListAction,
+  submitForReviewAction,
 } from "@/actions/content.actions";
 import { useDictOptions } from "@/hooks/useDictOptions";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { usePermission } from "@/hooks/usePermission";
 
 interface ContentItem {
   id?: string;
@@ -36,6 +42,12 @@ interface ContentItem {
   category: string;
   status: string;
   content: string;
+  author?: {
+    id: string;
+    nickname: string;
+  };
+  createdAt?: string;
+  description?: string;
 }
 
 export function DefaultCover() {
@@ -48,6 +60,8 @@ export default function ContentListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editItem, setEditItem] = useState<ContentItem | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewItem, setReviewItem] = useState<ContentItem | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -59,6 +73,11 @@ export default function ContentListPage() {
   );
   const { options: contentStatusOptions } =
     useDictOptions("sys_content_status");
+  const userInfo = useCurrentUser();
+  const isAdmin = userInfo?.role === "admin";
+  const currentUserId = userInfo?._id || userInfo?.id;
+  const currentUserRole = userInfo?.role;
+  const { hasPermission } = usePermission();
 
   const loadData = async (
     page = pagination.current,
@@ -151,6 +170,42 @@ export default function ContentListPage() {
     setIsEditMode(true);
   };
 
+  // 打开审核弹窗
+  const openReviewModal = (record: any) => {
+    setReviewItem(record);
+    setIsReviewModalOpen(true);
+  };
+
+  // 关闭审核弹窗
+  const closeReviewModal = () => {
+    setReviewItem(null);
+    setIsReviewModalOpen(false);
+  };
+
+  // 审核成功回调
+  const onReviewSuccess = () => {
+    closeReviewModal();
+    loadData(1);
+  };
+
+  // 提交审核
+  const handleSubmitForReview = async (id: string) => {
+    try {
+      setLoading(true);
+      const res = await submitForReviewAction(id);
+      if (res.success) {
+        message.success("已提交审核");
+        await loadData();
+      } else {
+        message.error(res.error || "提交审核失败");
+      }
+    } catch (e: any) {
+      message.error(e.message || "提交审核失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 表格列定义
   const columns: any = [
     {
@@ -158,6 +213,8 @@ export default function ContentListPage() {
       dataIndex: "index",
       key: "index",
       align: "center",
+      width: 70,
+      fixed: "left",
       render: (text: string, record: any, index: number) => {
         return (pagination.current - 1) * pagination.pageSize + index + 1;
       },
@@ -167,6 +224,7 @@ export default function ContentListPage() {
       dataIndex: "cover",
       key: "cover",
       align: "center",
+      width: 120,
       render: (src: string) => {
         return src ? (
           <Image
@@ -187,7 +245,8 @@ export default function ContentListPage() {
       dataIndex: "title",
       key: "title",
       align: "center",
-
+      ellipsis: true,
+      width: 240,
       render: (text: string) => <span style={{ fontWeight: 500 }}>{text}</span>,
     },
     {
@@ -195,7 +254,7 @@ export default function ContentListPage() {
       dataIndex: "category",
       key: "category",
       align: "center",
-
+      width: 100,
       render: (category: string) => {
         const item = contentCategoryOptions.find((i) => i.value === category);
         return <Tag color="blue">{item.label}</Tag>;
@@ -205,11 +264,18 @@ export default function ContentListPage() {
       title: "状态",
       dataIndex: "status",
       key: "status",
+      width: 90,
       align: "center",
-
       render: (status: string) => {
         const item = contentStatusOptions.find((i) => i.value === status);
-        return <Tag color={"#44706b"}>{item.label}</Tag>;
+        // 根据状态设置不同颜色
+        const colorMap: Record<string, string> = {
+          pending: "orange",
+          published: "green",
+          draft: "default",
+          archived: "red",
+        };
+        return <Tag color={colorMap[status] || "default"}>{item?.label}</Tag>;
       },
     },
     {
@@ -217,6 +283,7 @@ export default function ContentListPage() {
       dataIndex: "author",
       key: "author",
       align: "center",
+      width: 120,
       render: (author: any) => {
         return author.nickname;
       },
@@ -226,12 +293,14 @@ export default function ContentListPage() {
       dataIndex: "createdAt",
       key: "createdAt",
       align: "center",
+      width: 160,
     },
     {
       title: "更新人",
       dataIndex: "updater",
       key: "updater",
       align: "center",
+      width: 120,
       render: (author: any) => {
         return author?.nickname || "--";
       },
@@ -241,35 +310,86 @@ export default function ContentListPage() {
       dataIndex: "updatedAt",
       key: "updatedAt",
       align: "center",
+      width: 160,
     },
-    {
-      title: "操作",
-      key: "action",
-      align: "center",
-
+    // 只有有操作权限的用户才显示操作列
+    ...(hasPermission("content:update") ||
+    hasPermission("content:delete") ||
+    currentUserRole === "admin" ||
+    currentUserRole === "editor"
+      ? [
+          {
+            title: "操作",
+            key: "action",
+            align: "center",
+            width: 280,
+            fixed: "right",
       render: (_: any, record: ContentItem) => (
-        <Space size="middle">
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => editContentFunc(record)}
-            style={{ color: "#1890ff" }}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这篇文章吗？"
-            onConfirm={() => handleDelete(record.id!)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              删除
+        <Space size="small">
+          {/* 编辑按钮：需要 content:edit 权限 */}
+          {hasPermission("content:edit") && (
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => editContentFunc(record)}
+              style={{ color: "#1890ff" }}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          )}
+
+          {/* 审核按钮：admin 可以审核所有文章，editor 只能审核别人的文章 */}
+          {(() => {
+            const isAuthor =
+              String(record.author?.id) === String(currentUserId);
+            const canReview =
+              record.status === "pending" &&
+              (isAdmin || (currentUserRole === "editor" && !isAuthor));
+
+            return (
+              canReview && (
+                <Button
+                  type="text"
+                  icon={<CheckOutlined />}
+                  onClick={() => openReviewModal(record)}
+                  style={{ color: "#52c41a" }}
+                >
+                  审核
+                </Button>
+              )
+            );
+          })()}
+
+          {/* 提交审核按钮：作者且文章状态为 draft 时显示 */}
+          {record.author?.id === currentUserId && record.status === "draft" && (
+            <Button
+              type="text"
+              icon={<SendOutlined />}
+              onClick={() => handleSubmitForReview(record.id!)}
+              style={{ color: "#1890ff" }}
+            >
+              提交审核
+            </Button>
+          )}
+
+          {/* 删除按钮：需要 content:delete 权限 */}
+          {hasPermission("content:delete") && (
+            <Popconfirm
+              title="确定要删除这篇文章吗？"
+              onConfirm={() => handleDelete(record.id!)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="text" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
+  ]
+      : []),
   ];
 
   return (
@@ -313,13 +433,16 @@ export default function ContentListPage() {
             </Button>
           </Space>
 
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => addContentFunc()}
-          >
-            新增内容
-          </Button>
+          {/* 新增按钮：需要 content:add 权限 */}
+          {hasPermission("content:add") && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => addContentFunc()}
+            >
+              新增内容
+            </Button>
+          )}
         </Form>
       </Card>
 
@@ -330,6 +453,7 @@ export default function ContentListPage() {
           columns={columns}
           dataSource={dataSource}
           rowKey="id"
+          scroll={{ x: 1500 }}
           pagination={{
             current: pagination.current,
             pageSize: pagination.pageSize,
@@ -349,6 +473,24 @@ export default function ContentListPage() {
         onClose={onClose}
         editItem={editItem}
         onSuccessCallback={onSuccessCallback}
+      />
+
+      {/* 审核弹窗 */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        content={
+          reviewItem
+            ? {
+                id: reviewItem.id!,
+                title: reviewItem.title,
+                author: reviewItem.author || { nickname: "未知" },
+                createdAt: reviewItem.createdAt || "",
+                description: reviewItem.description || "",
+              }
+            : null
+        }
+        onClose={closeReviewModal}
+        onSuccess={onReviewSuccess}
       />
     </div>
   );

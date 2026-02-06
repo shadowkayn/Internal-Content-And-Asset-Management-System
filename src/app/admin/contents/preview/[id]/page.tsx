@@ -41,6 +41,7 @@ import {
   getContentDetail,
 } from "@/actions/content.actions";
 import { useDictOptions } from "@/hooks/useDictOptions";
+import { usePermission } from "@/hooks/usePermission";
 
 const { Title, Text } = Typography;
 
@@ -56,6 +57,7 @@ export default function ContentDetailPage() {
   const { options: contentCategoryOptions } = useDictOptions(
     "sys_content_category",
   );
+  const { hasPermission } = usePermission();
 
   const getArticleCategory = (category: string) => {
     const categoryOption = contentCategoryOptions.find(
@@ -206,16 +208,20 @@ export default function ContentDetailPage() {
           </Space>
           <Space>
             <Button icon={<ShareAltOutlined />}>分享</Button>
-            <Button icon={<DeleteOutlined />} danger onClick={onDelete}>
-              删除
-            </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={onUpdateArticle}
-            >
-              编辑内容
-            </Button>
+            {hasPermission("content:delete") && (
+              <Button icon={<DeleteOutlined />} danger onClick={onDelete}>
+                删除
+              </Button>
+            )}
+            {hasPermission("content:update") && (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={onUpdateArticle}
+              >
+                编辑内容
+              </Button>
+            )}
           </Space>
         </div>
       </Affix>

@@ -14,6 +14,25 @@ First, run the development server:
 pnpm dev
 ```
 
+viewer（查看者）：
+
+❌ 不能创建文章
+❌ 不能修改文章
+❌ 不能审核文章
+✅ 只能查看已发布的文章
+editor（编辑者）：
+
+✅ 可以创建文章（自动进入 pending 状态）
+✅ 可以修改自己的文章
+✅ 可以审核别人的文章
+✅ 可以查看所有文章
+admin（管理员）：
+
+✅ 可以创建文章（可以选择任何状态）
+✅ 可以修改所有文章
+✅ 可以审核所有文章
+✅ 可以查看所有文章
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

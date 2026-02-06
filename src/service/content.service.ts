@@ -1,13 +1,24 @@
 import { connectDB } from "@/lib/db";
 import ContentModel from "@/models/content.model";
+import ReviewRecordModel from "@/models/review-record.model";
 import { userStorage } from "@/lib/context";
 import { Audit } from "@/lib/decorators";
+import mongoose from "mongoose";
+import {
+  PermissionError,
+  ValidationError,
+  StateError,
+  NotFoundError,
+  ConflictError,
+  TransactionError,
+} from "@/lib/errors";
 
 export class ContentService {
   @Audit("内容管理", "CREATE", "创建文章")
   static async createContent(data: any) {
     const store = userStorage.getStore();
     const currentUserId = store?.userId;
+    const currentUserRole = store?.role;
 
     if (!currentUserId) {
       throw new Error("用户未登录");
@@ -23,9 +34,17 @@ export class ContentService {
       throw new Error(`文章标题已存在`);
     }
 
+    // 根据用户角色设置文章状态
+    // 如果是 editor 或 viewer，强制设置为 pending
+    // 如果是 admin，使用用户指定的 status
+    const finalStatus =
+      currentUserRole === "admin" ? data.status || "draft" : "pending";
+
     const finalData = {
       ...data,
+      status: finalStatus,
       author: currentUserId,
+      reviewStatus: "not_reviewed",
     };
 
     return await ContentModel.create(finalData);
@@ -230,5 +249,140 @@ export class ContentService {
           }
         : null,
     };
+  }
+
+  /**
+   * 审核文章
+   * @param params 审核参数
+   */
+  @Audit("内容管理", "UPDATE", "审核文章")
+  static async reviewContent(params: {
+    contentId: string;
+    action: "approved" | "rejected";
+    reason?: string;
+  }): Promise<void> {
+    const store = userStorage.getStore();
+    const currentUserId = store?.userId;
+    const currentUserRole = store?.role;
+
+    if (!currentUserId) {
+      throw new PermissionError("用户未登录");
+    }
+
+    // 权限检查：admin 和 editor 可以审核
+    if (currentUserRole !== "admin" && currentUserRole !== "editor") {
+      throw new PermissionError("无权限执行审核操作");
+    }
+
+    // 验证驳回时必须填写原因
+    if (params.action === "rejected" && !params.reason?.trim()) {
+      throw new ValidationError("驳回时必须填写驳回原因");
+    }
+
+    await connectDB();
+
+    const content = await ContentModel.findById(params.contentId);
+    if (!content) {
+      throw new NotFoundError("文章不存在");
+    }
+
+    // 状态检查：只能审核待审核状态的文章
+    if (content.status !== "pending") {
+      throw new StateError(
+        `只能审核待审核状态的文章，当前状态：${content.status}`,
+      );
+    }
+
+    // 使用事务确保原子性
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // 更新文章状态
+      const newStatus = params.action === "approved" ? "published" : "draft";
+      const reviewStatus = params.action === "approved" ? "approved" : "rejected";
+
+      await ContentModel.findByIdAndUpdate(
+        params.contentId,
+        {
+          status: newStatus,
+          reviewStatus: reviewStatus,
+          lastReviewedBy: currentUserId,
+          lastReviewedAt: new Date(),
+          rejectionReason: params.reason || "",
+        },
+        { session },
+      );
+
+      // 创建审核记录
+      await ReviewRecordModel.create(
+        [
+          {
+            contentId: params.contentId,
+            reviewerId: currentUserId,
+            action: params.action,
+            reason: params.reason || "",
+            previousStatus: content.status,
+            newStatus: newStatus,
+          },
+        ],
+        { session },
+      );
+
+      await session.commitTransaction();
+    } catch (error: any) {
+      await session.abortTransaction();
+
+      // 区分不同类型的错误
+      if (error.code === 11000) {
+        throw new ConflictError("文章正在被其他管理员审核");
+      }
+
+      throw new TransactionError("审核操作失败，请重试");
+    } finally {
+      session.endSession();
+    }
+  }
+
+  /**
+   * 提交文章审核
+   * @param contentId 文章ID
+   */
+  @Audit("内容管理", "UPDATE", "提交文章审核")
+  static async submitForReview(contentId: string): Promise<void> {
+    const store = userStorage.getStore();
+    const currentUserId = store?.userId;
+    const currentUserRole = store?.role;
+
+    if (!currentUserId) {
+      throw new PermissionError("用户未登录");
+    }
+
+    await connectDB();
+
+    const content = await ContentModel.findById(contentId);
+    if (!content) {
+      throw new NotFoundError("文章不存在");
+    }
+
+    // 权限检查：只能提交自己的文章（管理员除外）
+    if (
+      content.author.toString() !== currentUserId &&
+      currentUserRole !== "admin"
+    ) {
+      throw new PermissionError("只能提交自己的文章");
+    }
+
+    // 状态检查：只能提交草稿状态的文章
+    if (content.status !== "draft") {
+      throw new StateError(
+        `只能提交草稿状态的文章，当前状态：${content.status}`,
+      );
+    }
+
+    await ContentModel.findByIdAndUpdate(contentId, {
+      status: "pending",
+      reviewStatus: "not_reviewed",
+    });
   }
 }

@@ -7,6 +7,7 @@ import {
 } from "@/actions/content.actions";
 import dynamic from "next/dynamic";
 import ImageUpload from "@/components/common/ImageUpload";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 // 禁用 SSR
 const RichTextEditor = dynamic(
@@ -49,6 +50,8 @@ export default function ContentModal({
 }: ContentModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const userInfo = useCurrentUser();
+  const isAdmin = userInfo?.role === "admin";
 
   useEffect(() => {
     if (isModalOpen) {
@@ -65,9 +68,16 @@ export default function ContentModal({
     try {
       setLoading(true);
       const values = await form.validateFields();
+
+      // 如果不是管理员，添加默认状态为 draft
+      if (!isAdmin && !isEditMode) {
+        values.status = "draft";
+      }
+
       let res;
       if (isEditMode) {
         const params = {
+          status: editItem?.status,
           ...values,
           id: editItem?.id,
         };
@@ -127,16 +137,19 @@ export default function ContentModal({
             placeholder="请选择分类"
           />
         </Form.Item>
-        <Form.Item
-          label="内容状态"
-          name="status"
-          rules={[{ required: true, message: "请选择状态" }]}
-        >
-          <CommonSelect
-            dictCode="sys_content_status"
-            placeholder="请选择状态"
-          />
-        </Form.Item>
+        {/* 只有管理员才显示状态选择器 */}
+        {isAdmin && (
+          <Form.Item
+            label="内容状态"
+            name="status"
+            rules={[{ required: true, message: "请选择状态" }]}
+          >
+            <CommonSelect
+              dictCode="sys_content_status"
+              placeholder="请选择状态"
+            />
+          </Form.Item>
+        )}
         <Form.Item
           label="内容描述"
           name="description"

@@ -21,6 +21,14 @@ const editContentSchema = createContentSchema
   })
   .passthrough();
 
+const reviewContentSchema = z.object({
+  contentId: z.string({ message: "文章ID不能为空" }).min(1, "文章ID不能为空"),
+  action: z.enum(["approved", "rejected"], {
+    message: "审核操作必须是 approved 或 rejected",
+  }),
+  reason: z.string().optional(),
+});
+
 export const createContentAction = withAuthContext(async (data: any) => {
   // 使用 zod 校验参数
   const validatedFields = createContentSchema.safeParse(data);
@@ -84,3 +92,37 @@ export async function getContentDetail(contentId: string) {
     return { error: e.message || "获取详情失败" };
   }
 }
+
+/**
+ * 审核文章
+ */
+export const reviewContentAction = withAuthContext(async (data: any) => {
+  const validatedFields = reviewContentSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.issues[0].message };
+  }
+
+  try {
+    await ContentService.reviewContent(validatedFields.data);
+    revalidatePath("/admin/contents/list");
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "审核失败" };
+  }
+});
+
+/**
+ * 提交文章审核
+ */
+export const submitForReviewAction = withAuthContext(
+  async (contentId: string) => {
+    try {
+      await ContentService.submitForReview(contentId);
+      revalidatePath("/admin/contents/list");
+      return { success: true };
+    } catch (e: any) {
+      return { error: e.message || "提交审核失败" };
+    }
+  },
+);

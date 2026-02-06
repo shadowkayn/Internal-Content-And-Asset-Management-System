@@ -14,8 +14,25 @@ const ContentSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["draft", "published", "archived"],
+      enum: ["draft", "pending", "published", "archived"],
       default: "draft",
+    },
+    // 审核相关字段
+    reviewStatus: {
+      type: String,
+      enum: ["not_reviewed", "approved", "rejected"],
+      default: "not_reviewed",
+    },
+    lastReviewedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    lastReviewedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+      default: "",
     },
     cover: {
       type: String,
