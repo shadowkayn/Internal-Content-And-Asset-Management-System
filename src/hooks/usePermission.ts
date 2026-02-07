@@ -17,9 +17,6 @@ export function usePermission() {
   const hasPermission = (permissionCode: string): boolean => {
     if (!userInfo) return false;
 
-    // admin 拥有所有权限
-    if (userInfo.role === "admin") return true;
-
     // 检查用户权限列表中是否包含该权限
     return userInfo.permissions?.includes(permissionCode) || false;
   };

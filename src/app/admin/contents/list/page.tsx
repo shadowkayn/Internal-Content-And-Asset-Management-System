@@ -74,9 +74,7 @@ export default function ContentListPage() {
   const { options: contentStatusOptions } =
     useDictOptions("sys_content_status");
   const userInfo = useCurrentUser();
-  const isAdmin = userInfo?.role === "admin";
   const currentUserId = userInfo?._id || userInfo?.id;
-  const currentUserRole = userInfo?.role;
   const { hasPermission } = usePermission();
 
   const loadData = async (
@@ -315,8 +313,8 @@ export default function ContentListPage() {
     // 只有有操作权限的用户才显示操作列
     ...(hasPermission("content:update") ||
     hasPermission("content:delete") ||
-    currentUserRole === "admin" ||
-    currentUserRole === "editor"
+    hasPermission("content:review") ||
+    hasPermission("content:submit")
       ? [
           {
             title: "操作",
@@ -338,39 +336,38 @@ export default function ContentListPage() {
             </Button>
           )}
 
-          {/* 审核按钮：admin 可以审核所有文章，editor 只能审核别人的文章 */}
-          {(() => {
-            const isAuthor =
-              String(record.author?.id) === String(currentUserId);
-            const canReview =
-              record.status === "pending" &&
-              (isAdmin || (currentUserRole === "editor" && !isAuthor));
+          {/* 审核按钮：需要 content:review 权限，且文章状态为 pending */}
+          {record.status === "pending" &&
+            hasPermission("content:review") && (
+              <Button
+                type="text"
+                icon={<CheckOutlined />}
+                onClick={() => openReviewModal(record)}
+                style={{ color: "#52c41a" }}
+              >
+                审核
+              </Button>
+            )}
 
-            return (
-              canReview && (
-                <Button
-                  type="text"
-                  icon={<CheckOutlined />}
-                  onClick={() => openReviewModal(record)}
-                  style={{ color: "#52c41a" }}
-                >
-                  审核
-                </Button>
-              )
-            );
-          })()}
-
-          {/* 提交审核按钮：作者且文章状态为 draft 时显示 */}
-          {record.author?.id === currentUserId && record.status === "draft" && (
-            <Button
-              type="text"
-              icon={<SendOutlined />}
-              onClick={() => handleSubmitForReview(record.id!)}
-              style={{ color: "#1890ff" }}
-            >
-              提交审核
-            </Button>
-          )}
+          {/* 提交审核按钮：
+              1. 作者本人的文章
+              2. 文章状态为 draft
+              3. 有提交权限
+              4. 没有 viewAll 权限（有 viewAll 权限的用户是最高权限，不需要提交审核）
+          */}
+          {record.author?.id === currentUserId &&
+            record.status === "draft" &&
+            hasPermission("content:submit") &&
+            !hasPermission("content:viewAll") && (
+              <Button
+                type="text"
+                icon={<SendOutlined />}
+                onClick={() => handleSubmitForReview(record.id!)}
+                style={{ color: "#1890ff" }}
+              >
+                提交审核
+              </Button>
+            )}
 
           {/* 删除按钮：需要 content:delete 权限 */}
           {hasPermission("content:delete") && (

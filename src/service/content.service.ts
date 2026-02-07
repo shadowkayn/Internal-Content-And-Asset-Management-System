@@ -16,9 +16,8 @@ import {
 export class ContentService {
   @Audit("内容管理", "CREATE", "创建文章")
   static async createContent(data: any) {
-    const store = userStorage.getStore();
+    const store: any = userStorage.getStore();
     const currentUserId = store?.userId;
-    const currentUserRole = store?.role;
 
     if (!currentUserId) {
       throw new Error("用户未登录");
@@ -34,11 +33,13 @@ export class ContentService {
       throw new Error(`文章标题已存在`);
     }
 
-    // 根据用户角色设置文章状态
-    // 如果是 editor 或 viewer，强制设置为 pending
-    // 如果是 admin，使用用户指定的 status
-    const finalStatus =
-      currentUserRole === "admin" ? data.status || "draft" : "pending";
+    // 根据用户权限设置文章状态
+    // 如果有 content:publish 权限，可以直接发布
+    // 否则强制设置为 pending 待审核
+    const userPermissions = store?.permissions || [];
+    const canPublish = userPermissions.includes("content:publish");
+
+    const finalStatus = canPublish ? data.status || "draft" : "pending";
 
     const finalData = {
       ...data,
@@ -117,13 +118,18 @@ export class ContentService {
   static async getContentList(params: any) {
     await connectDB();
 
-    const { userId, role } = userStorage.getStore() || {};
+    const store: any = userStorage.getStore() || {};
+    const { userId, permissions = [] } = store;
 
     const { title, status, category, page = 1, pageSize = 10 } = params;
 
     const andConditions: any = [{ deleteFlag: 0 }];
 
-    if (role === "admin") {
+    // 权限检查：基于权限而非角色
+    const canViewAll = permissions.includes("content:viewAll");
+    const canViewPublished = permissions.includes("content:viewPublished");
+
+    if (canViewAll) {
       // 全量数据
       // 如果前端传了 status（比如管理员在下拉框选了“已归档”），那就查对应的状态
       if (status) {
@@ -132,23 +138,24 @@ export class ContentService {
         // 如果前端没传 status（默认进页面），帮管理员隐藏归档，让他看“有用的”东西
         andConditions.push({ status: { $ne: "archived" } });
       }
-    } else if (role === "editor") {
-      // 编辑者：自己所有的文章 OR 别人已发布的文章（不看别人的归档）
+    } else if (canViewPublished) {
+      // 有 viewPublished 权限：可以看自己的所有文章 + 别人已发布的
       if (status) {
-        // 如果编辑者选了状态，必须同时满足：[该状态] 且 [是自己写的 OR 别人已发布的]
-        // 这样即便他搜 status=archived，也只能搜到他自己的归档
-        andConditions.push({ status });
+        // 如果选了状态：看自己该状态的文章 OR 别人该状态且已发布的文章
         andConditions.push({
-          $or: [{ author: userId }, { status: "published" }],
+          $or: [
+            { author: userId, status },
+            { author: { $ne: userId }, status: "published" },
+          ],
         });
       } else {
-        // 默认情况：看自己所有的 + 别人发布的（不看别人的归档和草稿）
+        // 默认情况：看自己所有的 + 别人发布的
         andConditions.push({
           $or: [{ author: userId }, { status: "published" }],
         });
       }
     } else {
-      // 浏览者：只能查看已发布的文章
+      // 无特殊权限：只能看已发布的文章
       andConditions.push({ status: "published" });
     }
 
@@ -261,16 +268,16 @@ export class ContentService {
     action: "approved" | "rejected";
     reason?: string;
   }): Promise<void> {
-    const store = userStorage.getStore();
+    const store: any = userStorage.getStore();
     const currentUserId = store?.userId;
-    const currentUserRole = store?.role;
 
     if (!currentUserId) {
       throw new PermissionError("用户未登录");
     }
 
-    // 权限检查：admin 和 editor 可以审核
-    if (currentUserRole !== "admin" && currentUserRole !== "editor") {
+    // 权限检查：需要 content:review 权限
+    const userPermissions = store?.permissions || [];
+    if (!userPermissions.includes("content:review")) {
       throw new PermissionError("无权限执行审核操作");
     }
 
@@ -300,7 +307,8 @@ export class ContentService {
     try {
       // 更新文章状态
       const newStatus = params.action === "approved" ? "published" : "draft";
-      const reviewStatus = params.action === "approved" ? "approved" : "rejected";
+      const reviewStatus =
+        params.action === "approved" ? "approved" : "rejected";
 
       await ContentModel.findByIdAndUpdate(
         params.contentId,
@@ -340,7 +348,7 @@ export class ContentService {
 
       throw new TransactionError("审核操作失败，请重试");
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -350,9 +358,9 @@ export class ContentService {
    */
   @Audit("内容管理", "UPDATE", "提交文章审核")
   static async submitForReview(contentId: string): Promise<void> {
-    const store = userStorage.getStore();
+    const store: any = userStorage.getStore();
     const currentUserId = store?.userId;
-    const currentUserRole = store?.role;
+    const userPermissions = store?.permissions || [];
 
     if (!currentUserId) {
       throw new PermissionError("用户未登录");
@@ -365,11 +373,9 @@ export class ContentService {
       throw new NotFoundError("文章不存在");
     }
 
-    // 权限检查：只能提交自己的文章（管理员除外）
-    if (
-      content.author.toString() !== currentUserId &&
-      currentUserRole !== "admin"
-    ) {
+    // 权限检查：只能提交自己的文章（除非有 content:submit 权限可以提交所有文章）
+    const canSubmitAll = userPermissions.includes("content:submitAll");
+    if (content.author.toString() !== currentUserId && !canSubmitAll) {
       throw new PermissionError("只能提交自己的文章");
     }
 

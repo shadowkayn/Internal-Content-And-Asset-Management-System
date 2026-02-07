@@ -14,9 +14,7 @@ export default async function AdminRootLayout({
 
   const payload = await verifyToken(token);
   const allowedPaths: any | string[] = payload?.allowedPaths || [];
-
-  // 超管
-  const isSysAdmin = payload?.role === "admin";
+  const userPermissions: string[] = payload?.permissions || [];
 
   // 全量菜单
   const { data } = await getPermissionListAction("menu");
@@ -25,9 +23,6 @@ export default async function AdminRootLayout({
   const filterMenu: any = (nodes: any[]) => {
     return nodes
       .filter((node) => {
-        // 如果是超级管理员，直接全放行
-        if (isSysAdmin) return true;
-
         // 校验当前节点路径是否在允许列表中
         return allowedPaths.includes(node.path);
       })

@@ -118,13 +118,6 @@ export default function PermissionManagePage() {
 
   const columns: any = [
     {
-      title: "序号",
-      key: "index",
-      align: "center",
-      width: 80,
-      render: (_: any, __: any, index: number) => index + 1,
-    },
-    {
       title: "权限名称",
       dataIndex: "name",
       key: "name",

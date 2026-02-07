@@ -11,17 +11,19 @@ export function withAuthContext(handler: any) {
 
     let userId = "";
     let role = "";
+    let permissions: string[] = [];
     if (token) {
       try {
         const payload: any = await verifyToken(token);
         userId = payload?.userId;
         role = payload?.role;
+        permissions = payload?.permissions || [];
       } catch (e) {
         console.error("Token校验失败");
       }
     }
 
     // 开启异步上下文作用域
-    return userStorage.run({ userId, role }, () => handler(...args));
+    return userStorage.run({ userId, role, permissions }, () => handler(...args));
   };
 }

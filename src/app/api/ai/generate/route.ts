@@ -13,8 +13,6 @@ export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    console.log("👉 收到 Prompt:", prompt);
-
     // 检查 Key (调试用)
     if (!process.env.DEEPSEEK_API_KEY) {
       console.error("❌ 错误: 环境变量 DEEPSEEK_API_KEY 未找到");

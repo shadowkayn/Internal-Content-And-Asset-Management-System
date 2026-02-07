@@ -8,6 +8,7 @@ import {
 import dynamic from "next/dynamic";
 import ImageUpload from "@/components/common/ImageUpload";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { usePermission } from "@/hooks/usePermission";
 
 // 禁用 SSR
 const RichTextEditor = dynamic(
@@ -51,7 +52,7 @@ export default function ContentModal({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const userInfo = useCurrentUser();
-  const isAdmin = userInfo?.role === "admin";
+  const { hasPermission } = usePermission();
 
   useEffect(() => {
     if (isModalOpen) {
@@ -70,7 +71,7 @@ export default function ContentModal({
       const values = await form.validateFields();
 
       // 如果不是管理员，添加默认状态为 draft
-      if (!isAdmin && !isEditMode) {
+      if (!hasPermission("content:publish") && !isEditMode) {
         values.status = "draft";
       }
 
@@ -137,8 +138,8 @@ export default function ContentModal({
             placeholder="请选择分类"
           />
         </Form.Item>
-        {/* 只有管理员才显示状态选择器 */}
-        {isAdmin && (
+        {/* 只有有发布权限的用户才显示状态选择器 */}
+        {hasPermission("content:publish") && (
           <Form.Item
             label="内容状态"
             name="status"

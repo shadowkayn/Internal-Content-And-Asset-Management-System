@@ -30,9 +30,6 @@ export async function middleware(request: NextRequest) {
     return backLogin();
   }
 
-  // 超管放行
-  if (payload.role === "admin") return NextResponse.next();
-
   // 动态路径拦截
   const allowedPaths = payload.allowedPaths || [];
   // 校验逻辑：当前访问的路径，是否在允许列表中

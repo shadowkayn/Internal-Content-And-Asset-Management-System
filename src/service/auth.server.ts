@@ -102,6 +102,7 @@ export class AuthServer {
       userId: user._id.toString(),
       role: user.role,
       username: user?.nickname || user.username,
+      permissions: user.permissions, // 添加权限代码数组
       allowedPaths,
     });
 

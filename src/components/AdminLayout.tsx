@@ -67,24 +67,20 @@ export function AdminLayout({
       { title: "首页" },
     ];
 
-    // 调试：打印 initialMenu 结构（开发环境）
-    if (process.env.NODE_ENV === 'development' && initialMenu) {
-      console.log('🔍 initialMenu:', JSON.stringify(initialMenu, null, 2));
-      console.log('🔍 current pathname:', pathname);
-    }
-
     // 1. 将 pathname 拆分为片段
     const snippets = pathname.split("/").filter(Boolean);
 
     // 2. 递归查找 initialMenu 中的 label（兼容 key 和 path 字段）
-    const findLabelInMenu = (targetPath: string, menuData: any[]): string | null => {
+    const findLabelInMenu = (
+      targetPath: string,
+      menuData: any[],
+    ): string | null => {
       if (!menuData) return null;
       for (const item of menuData) {
         // 兼容 key 和 path 两种字段名
         const itemPath = item.key || item.path;
         if (itemPath === targetPath) {
           const label = item.label || item.name || item.title;
-          console.log(`✅ Found match: ${targetPath} -> ${label}`);
           return label;
         }
         if (item.children) {

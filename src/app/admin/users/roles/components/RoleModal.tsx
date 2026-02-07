@@ -37,25 +37,31 @@ const RoleModal = ({
 
   useEffect(() => {
     if (isModalOpen) {
-      getPermissionTreeData().then();
       form.resetFields();
       setCheckedKeys([]);
 
-      if (editingRole) {
-        form.setFieldsValue({
-          ...editingRole,
-          status: editingRole.status === "active",
-        });
-        // 延迟设置权限，等待权限树加载完成
-        setTimeout(() => {
-          const filteredKeys = filterParentKeys(editingRole?.permissions || []);
-          setCheckedKeys(filteredKeys);
-        }, 100);
-      } else {
-        form.setFieldsValue(null);
-      }
+      // 先加载权限树
+      getPermissionTreeData().then(() => {
+        // 权限树加载完成后再设置表单数据
+        if (editingRole) {
+          form.setFieldsValue({
+            ...editingRole,
+            status: editingRole.status === "active",
+          });
+        } else {
+          form.setFieldsValue(null);
+        }
+      });
     }
   }, [isModalOpen]);
+
+  // 监听 flatPermissions 和 editingRole 的变化，当权限数据加载完成后设置勾选状态
+  useEffect(() => {
+    if (isModalOpen && editingRole && flatPermissions.length > 0) {
+      const filteredKeys = filterParentKeys(editingRole?.permissions || []);
+      setCheckedKeys(filteredKeys);
+    }
+  }, [flatPermissions, isModalOpen]);
 
   const getPermissionTreeData = async () => {
     try {
