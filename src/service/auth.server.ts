@@ -18,6 +18,13 @@ const isProduction = process.env.NODE_ENV === "production";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export class AuthServer {
+  // 检查邮箱是否已存在
+  static async checkEmailExists(email: string): Promise<boolean> {
+    await connectDB();
+    const user = await User.findOne({ email }).lean();
+    return !!user;
+  }
+
   @Audit("用户认证", "POST", "发送邮箱验证码")
   static async sendEmailVerificationCode(email: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();

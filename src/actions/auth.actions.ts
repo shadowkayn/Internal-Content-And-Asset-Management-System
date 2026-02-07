@@ -12,6 +12,16 @@ export async function sendEmailVerificationCodeAction(email: string) {
   }
 }
 
+// 检查邮箱是否已存在
+export async function checkEmailExistsAction(email: string) {
+  try {
+    const exists = await AuthServer.checkEmailExists(email);
+    return { success: true, exists };
+  } catch (e: any) {
+    return { error: e.message || "检查邮箱失败" };
+  }
+}
+
 //  loginFunc
 export async function loginAction(formData: FormData) {
   try {

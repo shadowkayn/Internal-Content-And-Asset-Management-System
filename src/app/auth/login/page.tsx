@@ -22,6 +22,7 @@ import {
   loginAction,
   registerAction,
   sendEmailVerificationCodeAction,
+  checkEmailExistsAction,
 } from "@/actions/auth.actions";
 import { motion } from "framer-motion";
 import AnimeBackground from "@/app/auth/login/cpmponents/AuroraBackground";
@@ -39,6 +40,7 @@ export default function AuthPage() {
   // 倒计时
   const [countdown, setCountdown] = useState(0);
   const captchaRef = useRef<HTMLImageElement>(null);
+  const [emailChecking, setEmailChecking] = useState(false);
 
   // 倒计时逻辑
   useEffect(() => {
@@ -58,6 +60,20 @@ export default function AuthPage() {
       const email = await registerForm.validateFields(["email"]);
 
       setLoading(true);
+
+      // 先检查邮箱是否已存在
+      const checkResult = await checkEmailExistsAction(email.email);
+      if (checkResult.error) {
+        message.error(checkResult.error);
+        return;
+      }
+
+      if (checkResult.exists) {
+        message.error("该邮箱已被注册，请使用其他邮箱");
+        return;
+      }
+
+      // 邮箱未被注册，发送验证码
       const result = await sendEmailVerificationCodeAction(email.email);
 
       if (result.success) {
@@ -70,6 +86,37 @@ export default function AuthPage() {
       message.error("发送验证码失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 邮箱输入框失去焦点时检查邮箱是否已存在
+  const handleEmailBlur = async () => {
+    try {
+      const email = registerForm.getFieldValue("email");
+      // 只有邮箱格式正确时才检查
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return;
+      }
+
+      setEmailChecking(true);
+      const checkResult = await checkEmailExistsAction(email);
+
+      if (checkResult.error) {
+        return;
+      }
+
+      if (checkResult.exists) {
+        registerForm.setFields([
+          {
+            name: "email",
+            errors: ["该邮箱已被注册"],
+          },
+        ]);
+      }
+    } catch (e) {
+      // 静默失败，不影响用户体验
+    } finally {
+      setEmailChecking(false);
     }
   };
 
@@ -268,10 +315,13 @@ export default function AuthPage() {
                         { required: true, message: "请输入邮箱" },
                         { type: "email", message: "邮箱格式不正确" },
                       ]}
+                      validateStatus={emailChecking ? "validating" : undefined}
+                      hasFeedback
                     >
                       <Input
                         prefix={<MailOutlined />}
                         placeholder="绑定邮箱地址"
+                        onBlur={handleEmailBlur}
                       />
                     </Form.Item>
 
