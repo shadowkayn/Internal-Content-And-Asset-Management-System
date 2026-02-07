@@ -69,6 +69,12 @@ export default function ContentsPreviewPage() {
       cover:
         "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=800&auto=format&fit=crop",
     },
+    pending: {
+      color: "#faad14",
+      text: "审核中",
+      cover:
+        "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=800&auto=format&fit=crop",
+    },
   };
 
   const loadListData = async (

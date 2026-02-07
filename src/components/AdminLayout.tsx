@@ -21,6 +21,7 @@ import React, { useEffect, useState } from "react";
 import { logoutAction } from "@/actions/auth.actions";
 import { usePathname, useRouter } from "next/dist/client/components/navigation";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import ProfileModal from "@/components/ProfileModal";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -36,6 +37,7 @@ export function AdminLayout({
   const pathname = usePathname();
   const userInfo = useCurrentUser();
   const [mounted, setMounted] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -58,6 +60,8 @@ export function AdminLayout({
         router.replace("/auth/login");
         message.success("退出登录成功");
       });
+    } else if (key === "profile") {
+      setProfileModalOpen(true);
     }
   };
 
@@ -307,6 +311,12 @@ export function AdminLayout({
           transition: all 0.3s ease !important;
         }
       `}</style>
+
+      {/* 个人设置弹窗 */}
+      <ProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
     </Layout>
   );
 }

@@ -1,7 +1,8 @@
 import { connectDB } from "@/lib/db";
 import UserModel from "@/models/user.model";
-import { hashPassword } from "@/lib/password";
+import { hashPassword, comparePassword } from "@/lib/password";
 import { Audit } from "@/lib/decorators";
+import { userStorage } from "@/lib/context";
 
 export class UserListService {
   @Audit("用户管理", "CREATE", "创建用户")
@@ -138,6 +139,86 @@ export class UserListService {
     // 只需要更新 password 字段
     await UserModel.findByIdAndUpdate(
       id,
+      { $set: { password: hashedPassword } },
+      { runValidators: true },
+    );
+
+    return { success: true, message: "密码修改成功" };
+  }
+
+  @Audit("用户管理", "UPDATE", "更新个人资料")
+  static async updateProfile(data: any) {
+    await connectDB();
+
+    const store = userStorage.getStore();
+    const currentUserId = store?.userId;
+
+    if (!currentUserId) {
+      throw new Error("用户未登录");
+    }
+
+    const { email, phone, ...otherData } = data;
+
+    // 唯一性校验 (针对 email 和 phone)
+    const orConditions: any = [];
+    if (email) {
+      orConditions.push({ email });
+    }
+    if (phone) {
+      orConditions.push({ phone });
+    }
+
+    if (orConditions.length > 0) {
+      const existing = await UserModel.findOne({
+        $or: orConditions,
+        _id: { $ne: currentUserId }, // 排除当前用户自己
+      });
+
+      if (existing) {
+        const field = existing.email === email ? "邮箱" : "手机号";
+        throw new Error(`该${field}已被其他用户占用`);
+      }
+    }
+
+    const result = await UserModel.findByIdAndUpdate(
+      currentUserId,
+      { $set: { ...otherData, email, phone } },
+      { new: true, runValidators: true },
+    ).select("-password");
+
+    if (!result) throw new Error("用户不存在");
+
+    return result.toObject();
+  }
+
+  @Audit("用户管理", "UPDATE", "修改个人密码")
+  static async updatePassword(oldPassword: string, newPassword: string) {
+    await connectDB();
+
+    const store = userStorage.getStore();
+    const currentUserId = store?.userId;
+
+    if (!currentUserId) {
+      throw new Error("用户未登录");
+    }
+
+    const user = await UserModel.findById(currentUserId);
+    if (!user) {
+      throw new Error("用户不存在");
+    }
+
+    // 验证当前密码
+    const isValid = await comparePassword(oldPassword, user.password);
+    if (!isValid) {
+      throw new Error("当前密码错误");
+    }
+
+    // 加密新密码
+    const hashedPassword = await hashPassword(newPassword);
+
+    // 更新密码
+    await UserModel.findByIdAndUpdate(
+      currentUserId,
       { $set: { password: hashedPassword } },
       { runValidators: true },
     );
