@@ -37,7 +37,8 @@ export async function registerAction(formData: FormData) {
   try {
     const result = await AuthServer.register(formData);
     return result || { success: true };
-  } catch (e) {
-    return { error: "注册失败" };
+  } catch (e: any) {
+    console.error("Register Action Error:", e);
+    return { error: e.message || "注册失败，请重试" };
   }
 }

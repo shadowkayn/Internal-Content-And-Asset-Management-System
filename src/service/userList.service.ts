@@ -7,7 +7,7 @@ export class UserListService {
   @Audit("用户管理", "CREATE", "创建用户")
   static async createUser(data: any) {
     await connectDB();
-    const { username, email, phone } = data;
+    const { username, email, phone, password } = data;
     // 唯一性校验
     const existing = await UserModel.findOne({
       $or: [{ username }, { email }, { phone }],
@@ -21,9 +21,17 @@ export class UserListService {
             : "手机号";
       throw new Error(`用户${field}已存在`);
     }
-    const result: any = await UserModel.create(data);
+
+    // 密码加密
+    const hashedPassword = await hashPassword(password);
+    const userData = {
+      ...data,
+      password: hashedPassword,
+    };
+
+    const result: any = await UserModel.create(userData);
     // 返回时不包含密码字段
-    const { password, ...reset } = result.toObject();
+    const { password: _, ...reset } = result.toObject();
     return reset;
   }
 

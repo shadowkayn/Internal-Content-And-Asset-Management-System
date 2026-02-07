@@ -14,7 +14,6 @@ export default async function AdminRootLayout({
 
   const payload = await verifyToken(token);
   const allowedPaths: any | string[] = payload?.allowedPaths || [];
-  const userPermissions: string[] = payload?.permissions || [];
 
   // 全量菜单
   const { data } = await getPermissionListAction("menu");

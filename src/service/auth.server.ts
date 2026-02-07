@@ -4,6 +4,7 @@ import { Audit } from "@/lib/decorators";
 import { connectDB } from "@/lib/db";
 import { cookies } from "next/headers";
 import User from "@/models/user.model";
+import RoleModel from "@/models/role.model";
 import { comparePassword, hashPassword } from "@/lib/password";
 import PermissionModel from "@/models/permission.model";
 import { signToken } from "@/lib/token";
@@ -158,28 +159,68 @@ export class AuthServer {
     if (!saveCode || saveCode.toString() !== inputCaptcha) {
       return { error: "验证码错误或已过期" };
     }
-    // 创建新用户
-    const newUser = await User.create({
-      username,
-      password: await hashPassword(password),
-      email,
-      role: "viewer",
-      status: "active",
-    });
 
-    const token = await signToken({
-      userId: newUser._id.toString(),
-      role: newUser.role,
-      username: newUser?.username,
-      allowedPaths: ["/admin/dashboard"],
-    });
+    try {
+      // 查询 viewer 角色的默认权限
+      const viewerRole = await RoleModel.findOne({ 
+        code: "viewer",
+        deleteFlag: 0,
+        status: "active"
+      }).select("permissions name").lean();
 
-    (await cookies()).set("token", token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "strict",
-    });
+      const defaultPermissions = viewerRole?.permissions || [];
+      const roleName = viewerRole?.name || "查看者";
 
-    return { success: true };
+      // 创建新用户
+      const newUser = await User.create({
+        username,
+        password: await hashPassword(password),
+        email,
+        role: "viewer",
+        roleName: roleName,
+        roleStatus: "active",
+        status: "active",
+        permissions: defaultPermissions, // 使用 viewer 角色的默认权限
+      });
+
+      // 将 permissions 转换为普通数组
+      const userPermissions = Array.isArray(newUser.permissions) 
+        ? [...newUser.permissions] 
+        : [];
+
+      // 获取用户权限对应的路径
+      const permissions = await PermissionModel.find({
+        code: { $in: userPermissions },
+        deleteFlag: 0,
+        type: "menu",
+      }).lean();
+
+      const allowedPaths = permissions.map((p) => p.path);
+
+      const token = await signToken({
+        userId: newUser._id.toString(),
+        role: newUser.role,
+        username: newUser?.username,
+        permissions: userPermissions, // 使用转换后的普通数组
+        allowedPaths,
+      });
+
+      (await cookies()).set("token", token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "strict",
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("注册过程出错:", error);
+      // 如果是创建用户后的步骤出错，尝试删除已创建的用户
+      try {
+        await User.deleteOne({ username, email });
+      } catch (deleteError) {
+        console.error("清理失败的用户记录时出错:", deleteError);
+      }
+      return { error: error.message || "注册失败，请重试" };
+    }
   }
 }

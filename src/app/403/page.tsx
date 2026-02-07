@@ -80,7 +80,7 @@ export default function ForbiddenPage() {
               <Button
                 type="link"
                 size="large"
-                onClick={() => router.back()}
+                onClick={() => router.push("/auth/login")}
                 style={{ marginLeft: 16, color: "#6366f1" }}
               >
                 返回上一页

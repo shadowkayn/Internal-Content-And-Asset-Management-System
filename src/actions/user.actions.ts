@@ -7,6 +7,7 @@ import { z } from "zod";
 const addSchema = z
   .object({
     username: z.string("用户名不能为空").min(1, "用户名不能为空"),
+    password: z.string("密码不能为空").min(6, "密码长度不能小于6位"),
     nickname: z.string("昵称不能为空").min(1, "昵称不能为空"),
     email: z.string("邮箱不能为空").email("邮箱格式不正确"),
     status: z.enum(
